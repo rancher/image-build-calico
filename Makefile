@@ -15,5 +15,5 @@ image-scan:
 .PHONY: image-manifest
 image-manifest:
 	docker image inspect ranchertest/calico:$(TAG)
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create fips-image-build-flannel:$(TAG) \
+	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create ranchertest/calico:$(TAG) \
 		$(shell docker image inspect ranchertest/calico:$(TAG) | jq -r \'.[] | .RepoDigests[0]\')
