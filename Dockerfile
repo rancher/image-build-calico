@@ -47,14 +47,15 @@ RUN cd /go/pod2daemon                                                           
     CGO_ENABLED=1 go build -v -o bin/flexvol-amd64 flexvol/flexvoldriver.go
 
 FROM ubi
-RUN microdnf update -y && \ 
-    rm -rf /var/cache/yum
+RUN microdnf update -y    && \ 
+    rm -rf /var/cache/yum && \
+    mkdir -p /opt/cni
 
 COPY --from=builder /go/calicoctl/bin /usr/local/bin
 
-COPY --from=builder /go/cni-plugin/bin /usr/local/bin
-COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /usr/local/bin
-COPY --from=builder /go/cni-plugin/k8s-install/scripts/calico.conf.default /usr/local/bin/calico.conf.tmp
+COPY --from=builder /go/cni-plugin/bin /opt/cni/bin
+COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /
+COPY --from=builder /go/cni-plugin/k8s-install/scripts/calico.conf.default /calico.conf.tmp
 
 COPY --from=builder /go/node/dist/bin /usr/local/bin
 COPY --from=builder /go/node/dist/bin /usr/local/bin
