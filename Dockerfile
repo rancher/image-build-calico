@@ -36,12 +36,28 @@ RUN cd /go/node                                                                 
     CGO_ENABLED=1 go build -v -o dist/bin/calico-node -ldflags "-X github.com/projectcalico/node/pkg/startup.VERSION=$(git describe --tags --dirty --always)       \
     -X github.com/projectcalico/node/buildinfo.GitVersion=$(git describe --tags --dirty --always)                                                                  \
     -X github.com/projectcalico/node/buildinfo.BuildDate=$(date -u +'%FT%T%z')                                                                                     \
-    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD)" ./cmd/calico-node/main.go
+    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD)" ./cmd/calico-node/main.go                                                     && \
+    cd /go
+
+RUN git clone --depth=1 https://github.com/projectcalico/pod2daemon.git
+RUN cd /go/pod2daemon                                                                                                             && \
+    git fetch --all --tags --prune                                                                                                && \
+    git checkout tags/${TAG} -b ${TAG}                                                                                            && \
+    mkdir -p bin/flexvol-amd64                                                                                                    && \
+    CGO_ENABLED=1 go build -v -o bin/flexvol-amd64 flexvol/flexvoldriver.go
 
 FROM ubi
 RUN microdnf update -y && \ 
     rm -rf /var/cache/yum
 
-COPY --from=builder /go/calicoctl/bin  /usr/local/bin
+COPY --from=builder /go/calicoctl/bin /usr/local/bin
+
 COPY --from=builder /go/cni-plugin/bin /usr/local/bin
-COPY --from=builder /go/node/dist/bin  /usr/local/bin
+COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /usr/local/bin
+COPY --from=builder /go/cni-plugin/k8s-install/scripts/calico.conf.default /usr/local/bin/calico.conf.tmp
+
+COPY --from=builder /go/node/dist/bin /usr/local/bin
+COPY --from=builder /go/node/dist/bin /usr/local/bin
+
+COPY --from=builder /go/pod2daemon/flexvol/docker/flexvol.sh /usr/local/bin
+COPY --from=builder /go/pod2daemon/bin/flexvol-amd64 /usr/local/bin/flexvol
