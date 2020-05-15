@@ -42,10 +42,10 @@ RUN cd /go/node                                                                 
     cd /go
 
 RUN git clone --depth=1 https://github.com/projectcalico/pod2daemon.git
-RUN cd /go/pod2daemon                                                                                                             && \
-    git fetch --all --tags --prune                                                                                                && \
-    git checkout tags/${TAG} -b ${TAG}                                                                                            && \
-    mkdir -p bin/flexvol-amd64                                                                                                    && \
+RUN cd /go/pod2daemon                  && \
+    git fetch --all --tags --prune     && \
+    git checkout tags/${TAG} -b ${TAG} && \
+    mkdir -p bin/flexvol-amd64         && \
     CGO_ENABLED=1 go build -v -o bin/flexvol-amd64 flexvol/flexvoldriver.go
 
 FROM calico/bpftool:v5.3-amd64 as bpftool
@@ -67,11 +67,11 @@ ARG IPTABLES_SOURCERPM_URL=${CENTOS_MIRROR_BASE_URL}/BaseOS/Source/SPackages/ipt
 # Install build dependencies and security updates.
 RUN dnf install -y 'dnf-command(config-manager)' && \
     # Enable PowerTools repo for '-devel' packages
-    dnf config-manager --set-enabled PowerTools && \
+    dnf config-manager --set-enabled PowerTools  && \
     # Install required packages for building rpms. yum-utils is not required but it gives us yum-builddep to easily install build deps.
-    yum install -y rpm-build yum-utils make && \
+    yum install -y rpm-build yum-utils make      && \
     # Need these to build runit.
-    yum install -y wget glibc-static gcc && \
+    yum install -y wget glibc-static gcc         && \
     # Ensure security updates are installed.
     yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
 
@@ -79,14 +79,14 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 # iptables requires libnftnl-devel but libnftnl-devel is not available on ubi or CentOS repos.
 # (Note: it's not in RHEL8.1 either https://bugzilla.redhat.com/show_bug.cgi?id=1711361).
 # Rebuilding libnftnl will give us libnftnl-devel too.
-RUN rpm -i ${LIBNFTNL_SOURCERPM_URL} && \
-    yum-builddep -y --spec /root/rpmbuild/SPECS/libnftnl.spec && \
-    rpmbuild -bb /root/rpmbuild/SPECS/libnftnl.spec && \
+RUN rpm -i ${LIBNFTNL_SOURCERPM_URL}                                                   && \
+    yum-builddep -y --spec /root/rpmbuild/SPECS/libnftnl.spec                          && \
+    rpmbuild -bb /root/rpmbuild/SPECS/libnftnl.spec                                    && \
     # Now install libnftnl and libnftnl-devel
-    rpm -Uv /root/rpmbuild/RPMS/${ARCH}/libnftnl-${LIBNFTNL_VER}.el8.${ARCH}.rpm && \
+    rpm -Uv /root/rpmbuild/RPMS/${ARCH}/libnftnl-${LIBNFTNL_VER}.el8.${ARCH}.rpm       && \
     rpm -Uv /root/rpmbuild/RPMS/${ARCH}/libnftnl-devel-${LIBNFTNL_VER}.el8.${ARCH}.rpm && \
     # Install source RPM for iptables and install its build dependencies.
-    rpm -i ${IPTABLES_SOURCERPM_URL} && \
+    rpm -i ${IPTABLES_SOURCERPM_URL}                                                   && \
     yum-builddep -y --spec /root/rpmbuild/SPECS/iptables.spec
 
 # Patch the iptables build spec so that we keep the legacy iptables binaries.
@@ -118,9 +118,9 @@ RUN rpmbuild -bb /root/rpmbuild/SPECS/iptables.spec
 
 # runit is not available in ubi or CentOS repos so build it.
 RUN wget -P /tmp http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz && \
-    gunzip /tmp/runit-${RUNIT_VER}.tar.gz && \
-    tar -xpf /tmp/runit-${RUNIT_VER}.tar -C /tmp && \
-    cd /tmp/admin/runit-${RUNIT_VER}/ && \
+    gunzip /tmp/runit-${RUNIT_VER}.tar.gz                           && \
+    tar -xpf /tmp/runit-${RUNIT_VER}.tar -C /tmp                    && \
+    cd /tmp/admin/runit-${RUNIT_VER}/                               && \
     package/install
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.1-407
@@ -130,11 +130,11 @@ ARG IPTABLES_VER
 ARG RUNIT_VER
 
 # Required labels for certification
-LABEL name="Calico node" \
-      vendor="Project Calico" \
-      version=$GIT_VERSION \
-      release="1" \
-      summary="Calico node handles networking and policy for Calico" \
+LABEL name="Calico node"                                                 \
+      vendor="Project Calico"                                            \
+      version=$GIT_VERSION                                               \
+      release="1"                                                        \
+      summary="Calico node handles networking and policy for Calico"     \
       description="Calico node handles networking and policy for Calico" \
       maintainer="laurence@tigera.io"
 
@@ -149,31 +149,31 @@ COPY --from=centos /root/rpmbuild/RPMS/${ARCH}/* /tmp/rpms/
 # we're using CentOS repos for all our packages. Using packages from a single source (CentOS) makes
 # it less likely we'll run into package dependency version mismatches.
 COPY --from=builder /go/node/centos.repo /etc/yum.repos.d/
-RUN rm /etc/yum.repos.d/ubi.repo && \
-    microdnf install \
-    hostname \
+RUN rm /etc/yum.repos.d/ubi.repo                                                   && \
+    microdnf install                                                                  \
+    hostname                                                                          \
     # Needed for iptables
-    libpcap libmnl libnfnetlink libnftnl libnetfilter_conntrack \
-    ipset \
-    iputils \
+    libpcap libmnl libnfnetlink libnftnl libnetfilter_conntrack                       \
+    ipset                                                                             \
+    iputils                                                                           \
     # Need arp
-    net-tools \
+    net-tools                                                                         \
     # Need kmod to ensure ip6tables-save works correctly
-    kmod \
+    kmod                                                                              \
     # Also needed (provides utilities for browsing procfs like ps)
-    procps \
-    iproute \
-    iproute-tc \
+    procps                                                                            \
+    iproute                                                                           \
+    iproute-tc                                                                        \
     # Needed for conntrack
-    libnetfilter_cthelper libnetfilter_cttimeout libnetfilter_queue \
-    conntrack-tools \
+    libnetfilter_cthelper libnetfilter_cttimeout libnetfilter_queue                   \
+    conntrack-tools                                                                   \
     # Needed for runit startup script
-    which && \
-    microdnf clean all && \
+    which              &&                                                             \
+    microdnf clean all &&                                                             \
     # Install iptables via rpms. The libs must be force installed because the iptables source RPM has the release
     # version '9.el8_0.1' while the existing iptables-libs (pulled in by the iputils package) has version '9.el8.1'.
-    rpm --force -i /tmp/rpms/iptables-libs-${IPTABLES_VER}.el8.${ARCH}.rpm && \
-    rpm -i /tmp/rpms/iptables-${IPTABLES_VER}.el8.${ARCH}.rpm && \
+    rpm --force -i /tmp/rpms/iptables-libs-${IPTABLES_VER}.el8.${ARCH}.rpm         && \
+    rpm -i /tmp/rpms/iptables-${IPTABLES_VER}.el8.${ARCH}.rpm &&                      \
     # Set alternatives
     alternatives --install /usr/sbin/iptables iptables /usr/sbin/iptables-legacy 1 && \
     alternatives --install /usr/sbin/ip6tables ip6tables /usr/sbin/ip6tables-legacy 1
