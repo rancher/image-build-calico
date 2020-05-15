@@ -1,12 +1,9 @@
-#ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=briandowns/rancher-build-base:v0.1.1
 ARG ARCH=x86_64
 ARG GIT_VERSION=unknown
 ARG IPTABLES_VER=1.8.2-16
 ARG RUNIT_VER=2.1.2
-ARG BIRD_IMAGE=calico/bird:latest
-
-#FROM ${UBI_IMAGE} as ubi
+ARG BIRD_IMAGE=calico/bird:v0.3.3-160-g7df7218c-amd64
 
 FROM ${GO_IMAGE} as builder
 ARG TAG="" 
@@ -151,7 +148,7 @@ COPY --from=centos /root/rpmbuild/RPMS/${ARCH}/* /tmp/rpms/
 # Since the ubi repos do not contain all the packages we need (they're missing conntrack-tools),
 # we're using CentOS repos for all our packages. Using packages from a single source (CentOS) makes
 # it less likely we'll run into package dependency version mismatches.
-COPY centos.repo /etc/yum.repos.d/
+COPY --from=builder /go/node/centos.repo /etc/yum.repos.d/
 RUN rm /etc/yum.repos.d/ubi.repo && \
     microdnf install \
     # Needed for iptables
@@ -188,7 +185,7 @@ RUN systemctl disable systemd-resolved
 COPY --from=bird /bird* /bin/
 
 # Copy in the filesystem - this contains felix, calico-bgp-daemon, licenses, etc...
-COPY filesystem/ /
+COPY --from=builder /go/node/filesystem/ /
 
 # Add symlink to modprobe where iptables expects it to be.
 # This has to come after copying over filesystem/, since that may overwrite /sbin depending on the base image.
