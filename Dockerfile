@@ -151,6 +151,7 @@ COPY --from=centos /root/rpmbuild/RPMS/${ARCH}/* /tmp/rpms/
 COPY --from=builder /go/node/centos.repo /etc/yum.repos.d/
 RUN rm /etc/yum.repos.d/ubi.repo && \
     microdnf install \
+    hostname \
     # Needed for iptables
     libpcap libmnl libnfnetlink libnftnl libnetfilter_conntrack \
     ipset \
@@ -192,8 +193,9 @@ COPY --from=builder /go/node/filesystem/ /
 RUN ln -s /usr/sbin/modprobe /sbin/modprobe
 
 RUN mkdir -p /opt/cni
+ENV PATH=$PATH:/opt/cni/bin
 
-COPY --from=builder /go/calicoctl/bin/calicoctl-linux-amd64 /calicoctl
+COPY --from=builder /go/calicoctl/bin/calicoctl /calicoctl
 
 COPY --from=builder /go/cni-plugin/bin /opt/cni/bin
 COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /
