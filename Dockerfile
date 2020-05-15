@@ -174,7 +174,7 @@ RUN rm /etc/yum.repos.d/ubi.repo                                                
     # Install iptables via rpms. The libs must be force installed because the iptables source RPM has the release
     # version '9.el8_0.1' while the existing iptables-libs (pulled in by the iputils package) has version '9.el8.1'.
     rpm --force -i /tmp/rpms/iptables-libs-${IPTABLES_VER}.el8.${ARCH}.rpm         && \
-    rpm -i /tmp/rpms/iptables-${IPTABLES_VER}.el8.${ARCH}.rpm &&                      \
+    rpm -i /tmp/rpms/iptables-${IPTABLES_VER}.el8.${ARCH}.rpm                      && \
     # Set alternatives
     alternatives --install /usr/sbin/iptables iptables /usr/sbin/iptables-legacy 1 && \
     alternatives --install /usr/sbin/ip6tables ip6tables /usr/sbin/ip6tables-legacy 1
