@@ -193,7 +193,7 @@ RUN ln -s /usr/sbin/modprobe /sbin/modprobe
 
 RUN mkdir -p /opt/cni
 
-COPY --from=builder /go/calicoctl/bin /usr/local/bin
+COPY --from=builder /go/calicoctl/bin/calicoctl-linux-amd64 /calicoctl
 
 COPY --from=builder /go/cni-plugin/bin /opt/cni/bin
 COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /
