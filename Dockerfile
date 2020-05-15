@@ -198,10 +198,11 @@ ENV PATH=$PATH:/opt/cni/bin
 
 COPY --from=builder /go/calicoctl/bin/calicoctl /calicoctl
 
-COPY --from=builder /go/cni-plugin/bin /opt/cni/bin
-COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /
+COPY --from=builder /go/cni-plugin/bin/calico /opt/cni/bin/calico
+COPY --from=builder /go/cni-plugin/bin/calico-ipam /opt/cni/bin/calico-ipam
+COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /install-cni.sh
 COPY --from=builder /go/cni-plugin/k8s-install/scripts/calico.conf.default /calico.conf.tmp
-COPY --from=builder /go/cni-plugin/bin/amd64/ /opt/cni/bin/
+COPY --from=builder /go/cni-plugin/bin/amd64 /opt/cni/bin
 
 COPY --from=builder /go/node/dist/bin /bin
 COPY --from=bpftool /bpftool /bin
