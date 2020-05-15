@@ -28,6 +28,7 @@ RUN cd /go/cni-plugin                                                           
     mkdir bin                                                                                                                     && \
     CGO_ENABLED=1 go build -v -o bin/calico -ldflags "-X main.VERSION=$(git rev-parse --short HEAD) -s -w" ./cmd/calico           && \
     CGO_ENABLED=1 go build -v -o bin/calico-ipam -ldflags "-X main.VERSION=$(git rev-parse --short HEAD) -s -w" ./cmd/calico-ipam && \
+    make fetch-cni-bins                                                                                                           && \
     cd /go
 
 RUN git clone --depth=1 https://github.com/projectcalico/node.git
@@ -200,6 +201,7 @@ COPY --from=builder /go/calicoctl/bin/calicoctl /calicoctl
 COPY --from=builder /go/cni-plugin/bin /opt/cni/bin
 COPY --from=builder /go/cni-plugin/k8s-install/scripts/install-cni.sh /
 COPY --from=builder /go/cni-plugin/k8s-install/scripts/calico.conf.default /calico.conf.tmp
+COPY --from=builder /go/cni-plugin/bin/amd64 /opt/cni/bin
 
 COPY --from=builder /go/node/dist/bin /bin
 COPY --from=bpftool /bpftool /bin
