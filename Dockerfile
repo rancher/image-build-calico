@@ -50,6 +50,8 @@ RUN cd /go/pod2daemon                  && \
     CGO_ENABLED=1 go build -v -o bin/flexvol-amd64 flexvol/flexvoldriver.go
 
 FROM calico/bpftool:v5.3-amd64 as bpftool
+FROM calico/felix:latest as felix
+
 FROM ${BIRD_IMAGE} as bird
 
 # Use this build stage to build runit.
@@ -107,6 +109,7 @@ COPY --from=builder /go/cni-plugin/bin/amd64 /opt/cni/bin
 
 COPY --from=builder /go/node/dist/bin /bin
 COPY --from=bpftool /bpftool /bin
+COPY --from=felix /usr/lib/calico /usr/lib/calico
 
 COPY --from=builder /go/pod2daemon/flexvol/docker/flexvol.sh /usr/local/bin
 COPY --from=builder /go/pod2daemon/bin/flexvol-amd64 /usr/local/bin/flexvol
