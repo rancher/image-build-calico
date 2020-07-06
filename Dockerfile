@@ -96,7 +96,7 @@ COPY --from=builder /go/node/filesystem/ /
 # This has to come after copying over filesystem/, since that may overwrite /sbin depending on the base image.
 RUN ln -s /usr/sbin/modprobe /sbin/modprobe
 
-RUN mkdir -p /opt/cni
+RUN mkdir -p /opt/cni /usr/lib/calico
 ENV PATH=$PATH:/opt/cni/bin
 
 COPY --from=builder /go/calicoctl/bin/calicoctl /calicoctl
