@@ -39,7 +39,7 @@ RUN cd /go/node                                                                 
     CGO_ENABLED=1 go build -v -o dist/bin/calico-node -ldflags "-X github.com/projectcalico/node/pkg/startup.VERSION=$(git describe --tags --dirty --always) \
     -X github.com/projectcalico/node/buildinfo.GitVersion=$(git describe --tags --dirty --always)                                                            \
     -X github.com/projectcalico/node/buildinfo.BuildDate=$(date -u +'%FT%T%z')                                                                               \
-    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD)" ./cmd/calico-node/main.go                                               && \
+    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD) -w -s -extldflags \"-static\"" ./cmd/calico-node/main.go                                               && \
     cd /go
 
 RUN git clone --depth=1 https://github.com/projectcalico/pod2daemon.git
@@ -50,8 +50,6 @@ RUN cd /go/pod2daemon                  && \
     CGO_ENABLED=1 go build -v -o bin/flexvol-amd64 flexvol/flexvoldriver.go
 
 FROM calico/bpftool:v5.3-amd64 as bpftool
-FROM calico/felix:latest as felix
-
 FROM ${BIRD_IMAGE} as bird
 
 # Use this build stage to build runit.
@@ -96,7 +94,7 @@ COPY --from=builder /go/node/filesystem/ /
 # This has to come after copying over filesystem/, since that may overwrite /sbin depending on the base image.
 RUN ln -s /usr/sbin/modprobe /sbin/modprobe
 
-RUN mkdir -p /opt/cni /usr/lib/calico
+RUN mkdir -p /opt/cni
 ENV PATH=$PATH:/opt/cni/bin
 
 COPY --from=builder /go/calicoctl/bin/calicoctl /calicoctl
@@ -109,7 +107,6 @@ COPY --from=builder /go/cni-plugin/bin/amd64 /opt/cni/bin
 
 COPY --from=builder /go/node/dist/bin /bin
 COPY --from=bpftool /bpftool /bin
-COPY --from=felix /usr/lib/calico /usr/lib/calico
 
 COPY --from=builder /go/pod2daemon/flexvol/docker/flexvol.sh /usr/local/bin
 COPY --from=builder /go/pod2daemon/bin/flexvol-amd64 /usr/local/bin/flexvol
