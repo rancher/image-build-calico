@@ -1,7 +1,7 @@
-# ranchertest/calico
+# rancher/calico
 
 ## Build
 
 ```sh
-TAG=v0.4.0 make
+TAG=v3.13.3 make
 ```

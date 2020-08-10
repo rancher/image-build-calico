@@ -1,5 +1,5 @@
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=briandowns/rancher-build-base:v0.1.1
+ARG GO_IMAGE=rancher/build-base:v1.14.2
 ARG RUNIT_VER=2.1.2
 ARG BIRD_IMAGE=calico/bird:v0.3.3-160-g7df7218c-amd64
 
@@ -10,8 +10,8 @@ ARG TAG=""
 RUN apt update                                      && \ 
     apt upgrade -y                                  && \ 
     apt install -y apt-transport-https ca-certificates \
-                   software-properties-common git      \
-                   curl bash
+    software-properties-common git                     \
+    curl bash
 
 RUN git clone --depth=1 https://github.com/projectcalico/calicoctl.git
 RUN cd /go/calicoctl                                                                                                                                 && \
