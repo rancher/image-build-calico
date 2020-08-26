@@ -7,11 +7,16 @@ FROM ${UBI_IMAGE} as ubi
 
 FROM ${GO_IMAGE} as builder
 ARG TAG="" 
+ARG K3S_ROOT_VERSION=v0.6.0-rc3
 RUN apt update                                      && \ 
     apt upgrade -y                                  && \ 
     apt install -y apt-transport-https ca-certificates \
     software-properties-common git                     \
     curl bash
+
+RUN mkdir -p /tmp/xtables && \
+    curl -L https://github.com/rancher/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-xtables-amd64.tar -o /tmp/xtables/k3s-root-xtables.tar && \
+    tar -C /tmp/xtables -xvf /tmp/xtables/k3s-root-xtables.tar
 
 RUN git clone --depth=1 https://github.com/projectcalico/calicoctl.git
 RUN cd /go/calicoctl                                                                                                                                 && \
@@ -71,12 +76,14 @@ RUN wget -P /tmp http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz && \
 
 FROM ubi
 RUN microdnf update -y                         && \
-    microdnf install iptables hostname            \
+    microdnf install hostname                     \
     libpcap libmnl libnetfilter_conntrack         \ 
     libnetfilter_cthelper libnetfilter_cttimeout  \
     libnetfilter_queue ipset kmod iputils iproute \
     procps net-tools conntrack-tools which     && \
     rm -rf /var/cache/yum
+
+COPY --from=builder /tmp/xtables/bin/* /usr/sbin/
 
 ARG GIT_VERSION
 ARG RUNIT_VER
