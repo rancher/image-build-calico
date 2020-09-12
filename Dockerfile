@@ -1,5 +1,5 @@
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/build-base:v1.14.2
+ARG GO_IMAGE=rancher/hardened-build-base:v1.14.2-amd64
 ARG RUNIT_VER=2.1.2
 ARG BIRD_IMAGE=calico/bird:v0.3.3-160-g7df7218c-amd64
 

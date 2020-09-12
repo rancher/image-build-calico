@@ -1,4 +1,4 @@
-# rancher/calico
+# rancher/hardened-calico
 
 ## Build
 
