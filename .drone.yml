@@ -7,25 +7,22 @@ platform:
 
 steps:
 - name: build
-  image: rancher/hardened-build-base:v1.14.2-amd64
+  image: rancher/hardened-build-base:v1.13.15b4
   volumes:
   - name: dockersock
     path: /var/run
   commands:
   - sleep 20
-  - TAG=${DRONE_TAG} make
-  when:
-    event:
-    - tag
+  - make DRONE_TAG=${DRONE_TAG}
 
-- name: push
-  image: rancher/hardened-build-base:v1.14.2-amd64
+- name: publish
+  image: rancher/hardened-build-base:v1.13.15b4
   volumes:
   - name: dockersock
     path: /var/run
   commands:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  - TAG=${DRONE_TAG} make image-push
+  - make DRONE_TAG=${DRONE_TAG} image-push image-manifest
   environment:
     DOCKER_USERNAME:
       from_secret: docker_username
@@ -36,26 +33,12 @@ steps:
     - tag
 
 - name: scan
-  image: rancher/hardened-build-base:v1.14.2-amd64
+  image: rancher/hardened-build-base:v1.13.15b4
   volumes:
   - name: dockersock
     path: /var/run
   commands:
-  - TAG=${DRONE_TAG} make image-scan
-  when:
-    event:
-    - tag
-
-- name: manifest
-  image: rancher/hardened-build-base:v1.14.2-amd64
-  volumes:
-  - name: dockersock
-    path: /var/run
-  commands:
-  - TAG=${DRONE_TAG} make image-manifest
-  when:
-    event:
-    - tag
+  - make DRONE_TAG=${DRONE_TAG} image-scan
 
 services:
 - name: docker
@@ -66,5 +49,5 @@ services:
     path: /var/run
 
 volumes:
-  - name: dockersock
-    temp: {}
+- name: dockersock
+  temp: {}
