@@ -4,11 +4,16 @@ ifeq ($(ARCH),)
 ARCH=$(shell go env GOARCH)
 endif
 
+BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.13.3
+TAG ?= v3.13.3$(BUILD_META)
 
 ifneq ($(DRONE_TAG),)
 TAG := $(DRONE_TAG)
+endif
+
+ifeq (,$(filter %$(BUILD_META),$(TAG)))
+$(error TAG needs to end with build metadata: $(BUILD_META))
 endif
 
 CNI_PLUGINS_VERSION ?= v0.8.7
@@ -16,9 +21,10 @@ CNI_PLUGINS_VERSION ?= v0.8.7
 .PHONY: image-build
 image-build:
 	docker build \
+		--pull \
 		--build-arg ARCH=$(ARCH) \
 		--build-arg CNI_PLUGINS_VERSION=$(CNI_PLUGINS_VERSION) \
-		--build-arg TAG=$(TAG) \
+		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--tag $(ORG)/hardened-calico:$(TAG) \
 		--tag $(ORG)/hardened-calico:$(TAG)-$(ARCH) \
 	.
