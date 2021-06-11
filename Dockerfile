@@ -1,8 +1,11 @@
 ARG ARCH="amd64"
-ARG TAG="v3.13.3"
+ARG TAG="v3.19.1"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.15.8b5
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20210414
+
 FROM ${UBI_IMAGE} as ubi
+FROM ${CNI_IMAGE} as cni
 FROM ${GO_IMAGE} as builder
 # setup required packages
 RUN set -x \
@@ -24,7 +27,7 @@ RUN tar xvf /opt/xtables/k3s-root-xtables.tar -C /opt/xtables
 ### END K3S XTABLES #####
 
 FROM calico/bpftool:v5.3-${ARCH} AS calico_bpftool
-FROM calico/bird:v0.3.3-160-g7df7218c-${ARCH} AS calico_bird
+FROM calico/bird:v0.3.3-178-g274dc2e1-${ARCH} AS calico_bird
 
 ### BEGIN CALICOCTL ###
 FROM builder AS calico_ctl
@@ -53,13 +56,12 @@ RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 ENV GO_LDFLAGS="-linkmode=external -X main.VERSION=${TAG}"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/calico
-RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico-ipam
+RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
+RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/install ./cmd/calico
 RUN go-assert-static.sh bin/*
 RUN go-assert-boring.sh bin/*
 RUN mkdir -vp /opt/cni/bin
 RUN install -s bin/* /opt/cni/bin/
-RUN install -m 0755 k8s-install/scripts/install-cni.sh /opt/cni/install-cni.sh
-RUN install -m 0644 k8s-install/scripts/calico.conf.default /opt/cni/calico.conf.default
 ### END CALICO CNI #####
 
 
@@ -97,39 +99,6 @@ RUN install -D -s bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
 ### END CALICO POD2DAEMON #####
 
 
-### BEGIN CNI PLUGINS ###
-FROM builder AS cni_plugins
-ARG TAG
-ARG CNI_PLUGINS_VERSION="v0.8.7"
-RUN git clone --depth=1 https://github.com/containernetworking/plugins.git $GOPATH/src/github.com/containernetworking/plugins
-WORKDIR $GOPATH/src/github.com/containernetworking/plugins
-RUN git fetch --all --tags --prune
-RUN git checkout tags/${CNI_PLUGINS_VERSION} -b ${CNI_PLUGINS_VERSION}
-RUN sh -ex ./build_linux.sh -v \
-    -gcflags=-trimpath=/go/src \
-    -ldflags " \
-        -X github.com/containernetworking/plugins/pkg/utils/buildversion.BuildVersion=${CNI_PLUGINS_VERSION} \
-        -linkmode=external -extldflags \"-static -Wl,--fatal-warnings\" \
-    "
-RUN go-assert-static.sh bin/*
-RUN go-assert-boring.sh \
-    bin/bandwidth \
-    bin/bridge \
-    bin/dhcp \
-    bin/firewall \
-    bin/host-device \
-    bin/host-local \
-    bin/ipvlan \
-    bin/macvlan \
-    bin/portmap \
-    bin/ptp \
-    bin/vlan
-# install (with strip) to /opt/cni/bin
-RUN mkdir -vp /opt/cni/bin
-RUN install -D -s bin/* /opt/cni/bin
-### END CNI PLUGINS #####
-
-
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or ubi repositories.
 FROM centos:7 AS runit
@@ -157,7 +126,7 @@ COPY --from=calico_bird /bird*                  /usr/bin/
 COPY --from=calico_bpftool /bpftool             /usr/sbin/
 COPY --from=calico_pod2daemon /usr/local/bin/   /usr/local/bin/
 COPY --from=calico_cni /opt/cni/                /opt/cni/
-COPY --from=cni_plugins /opt/cni/               /opt/cni/
+COPY --from=cni	/opt/cni/                       /opt/cni/
 COPY --from=k3s_xtables /opt/xtables/bin/       /usr/sbin/
 COPY --from=runit /opt/local/command/           /usr/sbin/
 
@@ -173,7 +142,5 @@ RUN microdnf update -y                         && \
 COPY --from=calico_rootfs_overlay / /
 ENV PATH=$PATH:/opt/cni/bin
 RUN set -x \
- && test -e /opt/cni/install-cni.sh \
- && ln -vs /opt/cni/install-cni.sh /install-cni.sh \
- && test -e /opt/cni/calico.conf.default \
- && ln -vs /opt/cni/calico.conf.default /calico.conf.tmp
+ && test -e /opt/cni/bin/install \
+ && ln -vs /opt/cni/bin/install /install-cni \
