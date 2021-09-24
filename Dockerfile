@@ -1,8 +1,8 @@
 ARG ARCH="amd64"
-ARG TAG="v3.19.1"
+ARG TAG="v3.20.1"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.15.8b5
-ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20210414
+ARG GO_IMAGE=rancher/hardened-build-base:v1.16.7b7
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20210924
 
 FROM ${UBI_IMAGE} as ubi
 FROM ${CNI_IMAGE} as cni
@@ -21,13 +21,13 @@ RUN set -x \
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
 ARG ARCH
-ARG K3S_ROOT_VERSION=v0.8.1
+ARG K3S_ROOT_VERSION=v0.9.1
 ADD https://github.com/rancher/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-xtables-${ARCH}.tar /opt/xtables/k3s-root-xtables.tar
 RUN tar xvf /opt/xtables/k3s-root-xtables.tar -C /opt/xtables
 ### END K3S XTABLES #####
 
 FROM calico/bpftool:v5.3-${ARCH} AS calico_bpftool
-FROM calico/bird:v0.3.3-178-g274dc2e1-${ARCH} AS calico_bird
+FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
 
 ### BEGIN CALICOCTL ###
 FROM builder AS calico_ctl

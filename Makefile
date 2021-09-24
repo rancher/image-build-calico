@@ -6,7 +6,7 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.19.1$(BUILD_META)
+TAG ?= v3.20.1$(BUILD_META)
 
 ifneq ($(DRONE_TAG),)
 TAG := $(DRONE_TAG)
@@ -16,7 +16,7 @@ ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG needs to end with build metadata: $(BUILD_META))
 endif
 
-CNI_PLUGINS_VERSION ?= v0.8.7
+CNI_PLUGINS_VERSION ?= v0.9.1
 
 .PHONY: image-build
 image-build:
