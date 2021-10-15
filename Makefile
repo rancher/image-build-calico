@@ -27,7 +27,8 @@ image-build:
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--tag $(ORG)/hardened-calico:$(TAG) \
 		--tag $(ORG)/hardened-calico:$(TAG)-$(ARCH) \
-	.
+		. \
+        -f Dockerfile.$(ARCH)
 
 .PHONY: image-push
 image-push:
