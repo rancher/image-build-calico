@@ -1,4 +1,4 @@
-ARG ARCH="s390x"
+ARG ARCH="amd64"
 ARG TAG="v3.20.1"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.16.9b7
@@ -30,6 +30,7 @@ FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
 
 ### BEGIN CALICOCTL ###
 FROM builder AS calico_ctl
+ARG ARCH
 ARG TAG
 RUN git clone --depth=1 https://github.com/projectcalico/calicoctl.git $GOPATH/src/github.com/projectcalico/calicoctl
 WORKDIR $GOPATH/src/github.com/projectcalico/calicoctl
@@ -40,6 +41,7 @@ RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calicoctl/calicoctl/commands.GIT_REVISION=$(git rev-parse --short HEAD) \
     " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calicoctl ./calicoctl/calicoctl.go
 RUN go-assert-static.sh bin/*
+RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN install -s bin/* /usr/local/bin
 RUN calicoctl --version
 ### END CALICOCTL #####
@@ -47,6 +49,7 @@ RUN calicoctl --version
 
 ### BEGIN CALICO CNI ###
 FROM builder AS calico_cni
+ARG ARCH
 ARG TAG
 RUN git clone --depth=1 https://github.com/projectcalico/cni-plugin.git $GOPATH/src/github.com/projectcalico/cni-plugin
 WORKDIR $GOPATH/src/github.com/projectcalico/cni-plugin
@@ -57,6 +60,7 @@ RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/cali
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/install ./cmd/calico
 RUN go-assert-static.sh bin/*
+RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN mkdir -vp /opt/cni/bin
 RUN install -s bin/* /opt/cni/bin/
 ### END CALICO CNI #####
@@ -64,6 +68,7 @@ RUN install -s bin/* /opt/cni/bin/
 
 ### BEGIN CALICO NODE ###
 FROM builder AS calico_node
+ARG ARCH
 ARG TAG
 RUN git clone --depth=1 https://github.com/projectcalico/node.git $GOPATH/src/github.com/projectcalico/node
 WORKDIR $GOPATH/src/github.com/projectcalico/node
@@ -76,6 +81,7 @@ RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) \
     " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node
 RUN go-assert-static.sh bin/*
+RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN install -s bin/* /usr/local/bin
 ### END CALICO NODE #####
 
@@ -97,7 +103,9 @@ RUN install -D -s bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
 
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or ubi repositories.
-FROM clefos:7 AS runit
+FROM centos:7 AS runit-amd64
+FROM clefos:7 AS runit-s390x
+FROM runit-${ARCH} AS runit
 ARG RUNIT_VER=2.1.2
 # Install build dependencies and security updates.
 RUN yum install -y rpm-build yum-utils make && \
@@ -112,7 +120,21 @@ RUN ./package/install
 
 
 # gather all of the disparate calico bits into a rootfs overlay
-FROM scratch AS calico_rootfs_overlay
+FROM scratch AS calico_rootfs_overlay_amd64
+COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/sbin/      /usr/sbin/
+COPY --from=calico_node /usr/local/bin/      	/usr/bin/
+COPY --from=calico_ctl /usr/local/bin/calicoctl /calicoctl
+COPY --from=calico_bird /bird*                  /usr/bin/
+COPY --from=calico/bpftool:v5.3-amd64 /bpftool  /usr/sbin/
+COPY --from=calico_pod2daemon /usr/local/bin/   /usr/local/bin/
+COPY --from=calico_cni /opt/cni/                /opt/cni/
+COPY --from=cni	/opt/cni/                       /opt/cni/
+COPY --from=k3s_xtables /opt/xtables/bin/       /usr/sbin/
+COPY --from=runit /opt/local/command/           /usr/sbin/
+
+FROM scratch AS calico_rootfs_overlay_s390x
 COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/etc/       /etc/
 COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/licenses/  /licenses/
 COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/sbin/      /usr/sbin/
@@ -124,6 +146,8 @@ COPY --from=calico_cni /opt/cni/                /opt/cni/
 COPY --from=cni	/opt/cni/                       /opt/cni/
 COPY --from=k3s_xtables /opt/xtables/bin/       /usr/sbin/
 COPY --from=runit /opt/local/command/           /usr/sbin/
+
+FROM calico_rootfs_overlay_${ARCH} as calico_rootfs_overlay
 
 FROM ubi
 RUN microdnf update -y                         && \
