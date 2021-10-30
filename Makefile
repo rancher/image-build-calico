@@ -7,7 +7,14 @@ endif
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
 TAG ?= v3.20.1$(BUILD_META)
+
+ifeq ($(ARCH),s390x)
+K3S_ROOT_VERSION ?= v0.10.0-rc.0
+else
 K3S_ROOT_VERSION ?= v0.9.1
+endif
+
+CNI_PLUGINS_VERSION ?= v0.9.1
 
 ifneq ($(DRONE_TAG),)
 TAG := $(DRONE_TAG)
@@ -17,15 +24,9 @@ ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG needs to end with build metadata: $(BUILD_META))
 endif
 
-ifeq ($(ARCH),s390x)
-K3S_ROOT_VERSION = v0.10.0-rc.0
-endif
-
-CNI_PLUGINS_VERSION ?= v0.9.1
-
 .PHONY: image-build
 image-build:
-	docker build \
+	DOCKER_BUILDKIT=1 docker build --no-cache \
 		--pull \
 		--build-arg ARCH=$(ARCH) \
 		--build-arg CNI_PLUGINS_VERSION=$(CNI_PLUGINS_VERSION) \
@@ -33,8 +34,7 @@ image-build:
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
 		--tag $(ORG)/hardened-calico:$(TAG) \
 		--tag $(ORG)/hardened-calico:$(TAG)-$(ARCH) \
-		. \
-        -f Dockerfile.$(ARCH)
+		.
 
 .PHONY: image-push
 image-push:
