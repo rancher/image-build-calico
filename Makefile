@@ -6,7 +6,7 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.20.1$(BUILD_META)
+TAG ?= v3.20.2$(BUILD_META)
 
 ifeq ($(ARCH),s390x)
 K3S_ROOT_VERSION ?= v0.10.0-rc.0
