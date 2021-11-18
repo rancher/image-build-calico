@@ -1,7 +1,7 @@
 ARG ARCH="amd64"
 ARG TAG="v3.20.2"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.16.9b7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.16.10b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20211027
 
 FROM ${UBI_IMAGE} as ubi
