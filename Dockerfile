@@ -2,7 +2,7 @@ ARG ARCH="amd64"
 ARG TAG="v3.20.2"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.16.10b7
-ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20211027
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20211119
 
 FROM ${UBI_IMAGE} as ubi
 FROM ${CNI_IMAGE} as cni
@@ -21,7 +21,7 @@ RUN set -x \
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
 ARG ARCH
-ARG K3S_ROOT_VERSION=v0.9.1
+ARG K3S_ROOT_VERSION=v0.10.1
 ADD https://github.com/rancher/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-xtables-${ARCH}.tar /opt/xtables/k3s-root-xtables.tar
 RUN tar xvf /opt/xtables/k3s-root-xtables.tar -C /opt/xtables
 ### END K3S XTABLES #####
