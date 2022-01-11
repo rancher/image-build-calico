@@ -1,7 +1,7 @@
 ARG ARCH="amd64"
-ARG TAG="v3.20.2"
+ARG TAG="v3.20.3"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.16.10b7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.17.3b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20211119
 
 FROM ${UBI_IMAGE} as ubi
@@ -16,7 +16,8 @@ RUN set -x \
     gcc \
     git \
     linux-headers \
-    make
+    make \
+    patch
 
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
@@ -55,6 +56,9 @@ RUN git clone --depth=1 https://github.com/projectcalico/cni-plugin.git $GOPATH/
 WORKDIR $GOPATH/src/github.com/projectcalico/cni-plugin
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
+COPY dualStack-changes.patch .
+# Apply the patch only in versions v3.20 and v3.21. It is already part of v3.22
+RUN if [[ "${TAG}" =~ "v3.20" || "${TAG}" =~ "v3.21" ]]; then git apply dualStack-changes.patch; fi
 ENV GO_LDFLAGS="-linkmode=external -X main.VERSION=${TAG}"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/calico
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
