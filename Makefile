@@ -6,11 +6,11 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.21.2$(BUILD_META)
+TAG ?= v3.21.4$(BUILD_META)
 
 K3S_ROOT_VERSION ?= v0.10.1
 
-CNI_PLUGINS_VERSION ?= v0.9.1
+CNI_PLUGINS_VERSION ?= v1.0.1
 
 ifneq ($(DRONE_TAG),)
 TAG := $(DRONE_TAG)
