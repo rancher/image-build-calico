@@ -2,7 +2,7 @@ ARG ARCH="amd64"
 ARG TAG="v3.21.4"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.17.3b7
-ARG CNI_IMAGE=rancher/hardened-cni-plugins:v0.9.1-build20211119
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220121
 ARG GO_BORING=goboring/golang:1.16.7b7
 
 FROM ${UBI_IMAGE} as ubi
@@ -25,7 +25,16 @@ FROM ${GO_BORING} AS builder-amd64
 FROM builder AS builder-s390x
 FROM builder-${ARCH} AS calico-node-builder
 ARG ARCH
+ARG GOLANG_VERSION=1.17.5
+ARG GOBORING_BUILD=7
 RUN if [ "${ARCH}" = "amd64" ]; then apt -y update && apt -y upgrade && apt install -y file libbpf-dev gcc build-essential libelf-dev; fi
+ADD https://go-boringcrypto.storage.googleapis.com/go${GOLANG_VERSION}b${GOBORING_BUILD}.src.tar.gz /usr/local/boring.tgz
+WORKDIR /usr/local/boring
+RUN tar xzf ../boring.tgz
+WORKDIR /usr/local/boring/go/src
+RUN ./make.bash
+RUN rm -fr /usr/local/go/
+RUN cp -r /usr/local/boring/go/ /usr/local/go/
 COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
 
 ### BEGIN K3S XTABLES ###
@@ -42,13 +51,13 @@ FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
 FROM builder AS calico_ctl
 ARG ARCH
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/calicoctl.git $GOPATH/src/github.com/projectcalico/calicoctl
-WORKDIR $GOPATH/src/github.com/projectcalico/calicoctl
+RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/calicoctl
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 RUN GO_LDFLAGS="-linkmode=external \
-    -X github.com/projectcalico/calicoctl/calicoctl/commands.VERSION=${TAG} \
-    -X github.com/projectcalico/calicoctl/calicoctl/commands.GIT_REVISION=$(git rev-parse --short HEAD) \
+    -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.VERSION=${TAG} \
+    -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.GIT_REVISION=$(git rev-parse --short HEAD) \
     " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calicoctl ./calicoctl/calicoctl.go
 RUN go-assert-static.sh bin/*
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
@@ -61,8 +70,8 @@ RUN calicoctl --version
 FROM builder AS calico_cni
 ARG ARCH
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/cni-plugin.git $GOPATH/src/github.com/projectcalico/cni-plugin
-WORKDIR $GOPATH/src/github.com/projectcalico/cni-plugin
+RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/cni-plugin
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 COPY dualStack-changes.patch .
@@ -83,19 +92,19 @@ RUN install -s bin/* /opt/cni/bin/
 FROM calico-node-builder AS calico_node
 ARG ARCH
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/node.git $GOPATH/src/github.com/projectcalico/node
-WORKDIR $GOPATH/src/github.com/projectcalico/node
+RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
-RUN mkdir -p bin/third-party && go mod download && cp -r `go list -mod=mod -m -f "{{.Dir}}" github.com/projectcalico/felix`/bpf-gpl/include/libbpf bin/third-party && chmod -R +w bin/third-party
+RUN mkdir -p bin/third-party && go mod download && cp -r ../felix/bpf-gpl/include/libbpf bin/third-party && chmod -R +w bin/third-party
 RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C bin/third-party/libbpf/src BUILD_STATIC_ONLY=1; fi
 RUN GO_LDFLAGS="-linkmode=external \
-    -X github.com/projectcalico/node/pkg/startup.VERSION=${TAG} \
-    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
-    -X github.com/projectcalico/node/buildinfo.GitVersion=$(git describe --tags --always) \
-    -X github.com/projectcalico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
-    CGO_LDFLAGS="-L/go/src/github.com/projectcalico/node/bin/third-party/libbpf/src -lbpf -lelf -lz" \
-    CGO_CFLAGS="-I/go/src/github.com/projectcalico/node/bin/third-party/libbpf/src" \
+    -X github.com/projectcalico/calico/node/pkg/startup.VERSION=${TAG} \
+    -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
+    -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
+    -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
+    CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src -lbpf -lelf -lz" \
+    CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src" \
     CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node
 RUN go-assert-static.sh bin/calico-node
 RUN go-assert-boring.sh bin/calico-node
@@ -106,8 +115,8 @@ RUN install -s bin/calico-node /usr/local/bin
 ### BEGIN CALICO POD2DAEMON ###
 FROM builder AS calico_pod2daemon
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/pod2daemon.git $GOPATH/src/github.com/projectcalico/pod2daemon
-WORKDIR $GOPATH/src/github.com/projectcalico/pod2daemon
+RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/pod2daemon
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 ENV GO_LDFLAGS="-linkmode=external"
@@ -138,9 +147,9 @@ RUN ./package/install
 
 # gather all of the disparate calico bits into a rootfs overlay
 FROM scratch AS calico_rootfs_overlay_amd64
-COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/etc/       /etc/
-COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/licenses/  /licenses/
-COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/sbin/      /usr/sbin/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	/usr/bin/
 COPY --from=calico_ctl /usr/local/bin/calicoctl /calicoctl
 COPY --from=calico_bird /bird*                  /usr/bin/
@@ -152,9 +161,9 @@ COPY --from=k3s_xtables /opt/xtables/bin/       /usr/sbin/
 COPY --from=runit /opt/local/command/           /usr/sbin/
 
 FROM scratch AS calico_rootfs_overlay_s390x
-COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/etc/       /etc/
-COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/licenses/  /licenses/
-COPY --from=calico_node /go/src/github.com/projectcalico/node/filesystem/sbin/      /usr/sbin/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	/usr/bin/
 COPY --from=calico_ctl /usr/local/bin/calicoctl /calicoctl
 COPY --from=calico_bird /bird*                  /usr/bin/
