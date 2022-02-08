@@ -4,11 +4,14 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.17.3b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220121
 ARG GO_BORING=goboring/golang:1.16.7b7
+ARG GOBORING_GOLANG_VERSION=1.17.5
+ARG GOBORING_BUILD=7
 
 FROM ${UBI_IMAGE} as ubi
 FROM ${CNI_IMAGE} as cni
 FROM ${GO_IMAGE} as builder
 # setup required packages
+ARG TAG
 RUN set -x \
  && apk --no-cache add \
     bash \
@@ -19,16 +22,20 @@ RUN set -x \
     linux-headers \
     make \
     patch
+RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
+WORKDIR $GOPATH/src/github.com/projectcalico/calico
+RUN git fetch --all --tags --prune
+RUN git checkout tags/${TAG} -b ${TAG}
 
 # Image for projectcalico/node. Because of libbpf-dev and libelf-dev dependencies we can't use Alpine. Not needed in s390x
 FROM ${GO_BORING} AS builder-amd64
 FROM builder AS builder-s390x
 FROM builder-${ARCH} AS calico-node-builder
 ARG ARCH
-ARG GOLANG_VERSION=1.17.5
-ARG GOBORING_BUILD=7
+ARG GOBORING_GOLANG_VERSION
+ARG GOBORING_BUILD
 RUN if [ "${ARCH}" = "amd64" ]; then apt -y update && apt -y upgrade && apt install -y file libbpf-dev gcc build-essential libelf-dev; fi
-ADD https://go-boringcrypto.storage.googleapis.com/go${GOLANG_VERSION}b${GOBORING_BUILD}.src.tar.gz /usr/local/boring.tgz
+ADD https://go-boringcrypto.storage.googleapis.com/go${GOBORING_GOLANG_VERSION}b${GOBORING_BUILD}.src.tar.gz /usr/local/boring.tgz
 WORKDIR /usr/local/boring
 RUN tar xzf ../boring.tgz
 WORKDIR /usr/local/boring/go/src
@@ -36,6 +43,7 @@ RUN ./make.bash
 RUN rm -fr /usr/local/go/
 RUN cp -r /usr/local/boring/go/ /usr/local/go/
 COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
+COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
 
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
@@ -51,10 +59,7 @@ FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
 FROM builder AS calico_ctl
 ARG ARCH
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/calicoctl
-RUN git fetch --all --tags --prune
-RUN git checkout tags/${TAG} -b ${TAG}
 RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.VERSION=${TAG} \
     -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.GIT_REVISION=$(git rev-parse --short HEAD) \
@@ -70,10 +75,7 @@ RUN calicoctl --version
 FROM builder AS calico_cni
 ARG ARCH
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/cni-plugin
-RUN git fetch --all --tags --prune
-RUN git checkout tags/${TAG} -b ${TAG}
 COPY dualStack-changes.patch .
 # Apply the patch only in versions v3.20 and v3.21. It is already part of v3.22
 RUN if [[ "${TAG}" =~ "v3.20" || "${TAG}" =~ "v3.21" ]]; then git apply dualStack-changes.patch; fi
@@ -92,10 +94,7 @@ RUN install -s bin/* /opt/cni/bin/
 FROM calico-node-builder AS calico_node
 ARG ARCH
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
-RUN git fetch --all --tags --prune
-RUN git checkout tags/${TAG} -b ${TAG}
 RUN mkdir -p bin/third-party && go mod download && cp -r ../felix/bpf-gpl/include/libbpf bin/third-party && chmod -R +w bin/third-party
 RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C bin/third-party/libbpf/src BUILD_STATIC_ONLY=1; fi
 RUN GO_LDFLAGS="-linkmode=external \
@@ -115,10 +114,7 @@ RUN install -s bin/calico-node /usr/local/bin
 ### BEGIN CALICO POD2DAEMON ###
 FROM builder AS calico_pod2daemon
 ARG TAG
-RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/pod2daemon
-RUN git fetch --all --tags --prune
-RUN git checkout tags/${TAG} -b ${TAG}
 ENV GO_LDFLAGS="-linkmode=external"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/flexvoldriver ./flexvol
 RUN go-assert-static.sh bin/*
