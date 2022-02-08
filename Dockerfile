@@ -1,10 +1,10 @@
 ARG ARCH="amd64"
 ARG TAG="v3.21.4"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.17.3b7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.17.6b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220121
 ARG GO_BORING=goboring/golang:1.16.7b7
-ARG GOBORING_GOLANG_VERSION=1.17.5
+ARG GOBORING_GOLANG_VERSION=1.17.6
 ARG GOBORING_BUILD=7
 
 FROM ${UBI_IMAGE} as ubi
