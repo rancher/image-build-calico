@@ -43,6 +43,7 @@ RUN cp -r /usr/local/boring/go/ /usr/local/go/
 COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
 COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
 
+# We need a different image for s390x because goboring installation is not supported
 FROM builder AS calico-node-builder-s390x
 COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
 COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
@@ -108,7 +109,8 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src -lbpf -lelf -lz" \
     CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src" \
     CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
-    else \
+    fi
+RUN if [ "${ARCH}" = "s390x" ]; then \  
     GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/node/pkg/startup.VERSION=${TAG} \
     -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
