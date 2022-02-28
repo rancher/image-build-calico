@@ -28,13 +28,11 @@ RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 
 # Image for projectcalico/node. Because of libbpf-dev and libelf-dev dependencies we can't use Alpine. Not needed in s390x
-FROM ${GO_BORING} AS builder-amd64
-FROM builder AS builder-s390x
-FROM builder-${ARCH} AS calico-node-builder
+FROM ${GO_BORING} AS calico-node-builder-amd64
 ARG ARCH
 ARG GOBORING_GOLANG_VERSION
 ARG GOBORING_BUILD
-RUN if [ "${ARCH}" = "amd64" ]; then apt -y update && apt -y upgrade && apt install -y file libbpf-dev gcc build-essential libelf-dev; fi
+RUN apt -y update && apt -y upgrade && apt install -y file libbpf-dev gcc build-essential libelf-dev
 ADD https://go-boringcrypto.storage.googleapis.com/go${GOBORING_GOLANG_VERSION}b${GOBORING_BUILD}.src.tar.gz /usr/local/boring.tgz
 WORKDIR /usr/local/boring
 RUN tar xzf ../boring.tgz
@@ -42,6 +40,11 @@ WORKDIR /usr/local/boring/go/src
 RUN ./make.bash
 RUN rm -fr /usr/local/go/
 RUN cp -r /usr/local/boring/go/ /usr/local/go/
+COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
+COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
+
+# We need a different image for s390x because goboring installation is not supported
+FROM builder AS calico-node-builder-s390x
 COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
 COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
 
@@ -91,22 +94,34 @@ RUN install -s bin/* /opt/cni/bin/
 
 
 ### BEGIN CALICO NODE ###
-FROM calico-node-builder AS calico_node
+FROM calico-node-builder-${ARCH} as calico_node
 ARG ARCH
 ARG TAG
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN mkdir -p bin/third-party && go mod download && cp -r ../felix/bpf-gpl/include/libbpf bin/third-party && chmod -R +w bin/third-party
 RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C bin/third-party/libbpf/src BUILD_STATIC_ONLY=1; fi
-RUN GO_LDFLAGS="-linkmode=external \
+RUN if [ "${ARCH}" = "amd64" ]; then \  
+    GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/node/pkg/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
     CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src -lbpf -lelf -lz" \
     CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src" \
-    CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node
+    CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
+    fi
+RUN if [ "${ARCH}" = "s390x" ]; then \  
+    GO_LDFLAGS="-linkmode=external \
+    -X github.com/projectcalico/node/pkg/startup.VERSION=${TAG} \
+    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
+    -X github.com/projectcalico/node/buildinfo.GitVersion=$(git describe --tags --always) \
+    -X github.com/projectcalico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
+    CGO_ENABLED=0 \
+    CGO_LDFLAGS="" \
+    go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
+    fi
 RUN go-assert-static.sh bin/calico-node
-RUN go-assert-boring.sh bin/calico-node
+RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/calico-node; fi
 RUN install -s bin/calico-node /usr/local/bin
 ### END CALICO NODE #####
 
