@@ -81,7 +81,7 @@ ARG TAG
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/cni-plugin
 COPY dualStack-changes.patch .
 # Apply the patch only in versions v3.20 and v3.21. It is already part of v3.22
-RUN if [[ "${TAG}" =~ "v3.20" || "${TAG}" =~ "v3.21" ]]; then git apply dualStack-changes.patch; fi
+RUN if [[ "${TAG}" =~ "v3.20" || "${TAG}" =~ "v3.21" ]]; then patch -p1 < dualStack-changes.patch; fi
 ENV GO_LDFLAGS="-linkmode=external -X main.VERSION=${TAG}"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/calico
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
