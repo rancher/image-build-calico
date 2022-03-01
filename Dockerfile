@@ -1,5 +1,5 @@
 ARG ARCH="amd64"
-ARG TAG="v3.21.4"
+ARG TAG="v3.22.0"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.17.6b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
@@ -94,20 +94,20 @@ RUN install -s bin/* /opt/cni/bin/
 
 
 ### BEGIN CALICO NODE ###
-FROM calico-node-builder-${ARCH} as calico_node
+FROM calico-node-builder-${ARCH} AS calico_node
 ARG ARCH
 ARG TAG
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
-RUN mkdir -p bin/third-party && go mod download && cp -r ../felix/bpf-gpl/include/libbpf bin/third-party && chmod -R +w bin/third-party
-RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C bin/third-party/libbpf/src BUILD_STATIC_ONLY=1; fi
+RUN go mod download
+RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C ../felix/bpf-gpl/include/libbpf/src BUILD_STATIC_ONLY=1; fi
 RUN if [ "${ARCH}" = "amd64" ]; then \  
     GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/node/pkg/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
-    CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src -lbpf -lelf -lz" \
-    CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/node/bin/third-party/libbpf/src" \
+    CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz" \
+    CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl" \
     CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN if [ "${ARCH}" = "s390x" ]; then \  
