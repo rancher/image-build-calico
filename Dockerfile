@@ -1,19 +1,19 @@
 ARG ARCH="amd64"
 ARG TAG="v3.22.0"
-ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.17.6b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
 ARG GO_BORING=goboring/golang:1.16.7b7
 ARG GOBORING_GOLANG_VERSION=1.17.6
 ARG GOBORING_BUILD=7
 
-FROM ${UBI_IMAGE} as ubi
+FROM ${BCI_IMAGE} as bci
 FROM ${CNI_IMAGE} as cni
 FROM ${GO_IMAGE} as builder
 # setup required packages
 ARG TAG
 RUN set -x \
- && apk --no-cache add \
+    && apk --no-cache add \
     bash \
     curl \
     file \
@@ -201,7 +201,7 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM calico_rootfs_overlay_${ARCH} as calico_rootfs_overlay
 
-FROM ubi
+FROM bci
 RUN microdnf update -y                         && \
     microdnf install hostname                     \
     libpcap libmnl libnetfilter_conntrack         \
@@ -212,5 +212,5 @@ RUN microdnf update -y                         && \
 COPY --from=calico_rootfs_overlay / /
 ENV PATH=$PATH:/opt/cni/bin
 RUN set -x \
- && test -e /opt/cni/bin/install \
- && ln -vs /opt/cni/bin/install /install-cni \
+    && test -e /opt/cni/bin/install \
+    && ln -vs /opt/cni/bin/install /install-cni \
