@@ -1,5 +1,5 @@
 ARG ARCH="amd64"
-ARG TAG="v3.22.2"
+ARG TAG="v3.23.3"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.17.6b7
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
