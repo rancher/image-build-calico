@@ -1,10 +1,11 @@
 ARG ARCH="amd64"
-ARG TAG="v3.23.3"
+ARG TAG="v3.24.1"
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.17.6b7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
 ARG GO_BORING=goboring/golang:1.16.7b7
-ARG GOBORING_GOLANG_VERSION=1.17.6
+#Latest available version of goboring
+ARG GOBORING_GOLANG_VERSION=1.18.6
 ARG GOBORING_BUILD=7
 
 FROM ${UBI_IMAGE} as ubi
@@ -107,7 +108,7 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
     CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz" \
-    CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl" \
+    CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix/bpf-gpl" \
     CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN if [ "${ARCH}" = "s390x" ]; then \  
