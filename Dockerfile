@@ -153,7 +153,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 ### END CALICO KUBE-CONTROLLERS #####
 
 ### BEGIN RUNIT ###
-# We need to build runit because there aren't any rpms for it in CentOS or bci repositories.
+# We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
 FROM centos:7 AS runit-amd64
 FROM clefos:7 AS runit-s390x
 FROM runit-${ARCH} AS runit
