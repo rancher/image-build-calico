@@ -1,6 +1,6 @@
 ARG ARCH="amd64"
 ARG TAG="v3.24.1"
-ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:15.3.17.20.12
 ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
 ARG GO_BORING=goboring/golang:1.16.7b7
@@ -8,7 +8,7 @@ ARG GO_BORING=goboring/golang:1.16.7b7
 ARG GOBORING_GOLANG_VERSION=1.18.6
 ARG GOBORING_BUILD=7
 
-FROM ${UBI_IMAGE} as ubi
+FROM ${BCI_IMAGE} as bci
 FROM ${CNI_IMAGE} as cni
 FROM ${GO_IMAGE} as builder
 # setup required packages
@@ -152,7 +152,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 ### END CALICO KUBE-CONTROLLERS #####
 
 ### BEGIN RUNIT ###
-# We need to build runit because there aren't any rpms for it in CentOS or ubi repositories.
+# We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
 FROM centos:7 AS runit-amd64
 FROM clefos:7 AS runit-s390x
 FROM runit-${ARCH} AS runit
@@ -161,7 +161,7 @@ ARG RUNIT_VER=2.1.2
 RUN yum install -y rpm-build yum-utils make && \
     yum install -y wget glibc-static gcc    && \
     yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
-# runit is not available in ubi or CentOS repos so build it.
+# runit is not available in bci or CentOS repos so build it.
 ADD http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz /tmp/runit.tar.gz
 WORKDIR /opt/local
 RUN tar xzf /tmp/runit.tar.gz --strip-components=2 -C .
@@ -201,14 +201,25 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM calico_rootfs_overlay_${ARCH} as calico_rootfs_overlay
 
-FROM ubi
-RUN microdnf update -y                         && \
-    microdnf install hostname                     \
-    libpcap libmnl libnetfilter_conntrack         \
-    libnetfilter_cthelper libnetfilter_cttimeout  \
-    libnetfilter_queue ipset kmod iputils iproute \
-    procps net-tools conntrack-tools which     && \
-    rm -rf /var/cache/yum
+FROM bci
+RUN zypper update -y && \
+    zypper install -y  \
+    hostname \
+    libpcap1 \
+    libmnl0 \
+    libnetfilter_conntrack3 \
+    libnetfilter_cthelper0 \
+    libnetfilter_cttimeout1   \
+    libnetfilter_queue1 \
+    ipset \
+    kmod \
+    iputils \
+    iproute2 \
+    procps \
+    net-tools \
+    conntrack-tools \
+    which  && \
+    rm -rf /var/cache/zypp/packages
 COPY --from=calico_rootfs_overlay / /
 ENV PATH=$PATH:/opt/cni/bin
 RUN set -x \
