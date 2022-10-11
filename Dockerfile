@@ -4,7 +4,7 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
 ARG GO_BORING=goboring/golang:1.16.7b7
-#Latest available version of goboring
+# Not yet a 1.19.1 available
 ARG GOBORING_GOLANG_VERSION=1.18.6
 ARG GOBORING_BUILD=7
 
@@ -95,31 +95,30 @@ RUN install -s bin/* /opt/cni/bin/
 
 
 ### BEGIN CALICO NODE ###
+### Can't use go-build-static.sh due to -Wl and --fatal-warnings flags ###
 FROM calico-node-builder-${ARCH} AS calico_node
 ARG ARCH
 ARG TAG
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN go mod download
+ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz"
+ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl"
+ENV CGO_ENABLED=1
 RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C ../felix/bpf-gpl/include/libbpf/src BUILD_STATIC_ONLY=1; fi
-RUN if [ "${ARCH}" = "amd64" ]; then \  
-    GO_LDFLAGS="-linkmode=external \
-    -X github.com/projectcalico/calico/node/pkg/startup.VERSION=${TAG} \
+RUN if [ "${ARCH}" = "amd64" ]; then \
+    go build -ldflags "-linkmode=external -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
-    -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
-    CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz" \
-    CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix/bpf-gpl" \
-    CGO_ENABLED=1 go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
+    -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) -extldflags \"-static\"" \
+    -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN if [ "${ARCH}" = "s390x" ]; then \  
-    GO_LDFLAGS="-linkmode=external \
-    -X github.com/projectcalico/node/pkg/startup.VERSION=${TAG} \
-    -X github.com/projectcalico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
-    -X github.com/projectcalico/node/buildinfo.GitVersion=$(git describe --tags --always) \
-    -X github.com/projectcalico/node/buildinfo.BuildDate=$(date -u +%FT%T%z)" \
-    CGO_ENABLED=0 \
-    CGO_LDFLAGS="" \
-    go build -ldflags "-linkmode=external -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
+    CGO_ENABLED=0 && CGO_LDFLAGS="" && go build -ldflags "-linkmode=external \
+    -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
+    -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
+    -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
+    -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) -extldflags \"-static\"" \
+    -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN go-assert-static.sh bin/calico-node
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/calico-node; fi
