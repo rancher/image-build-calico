@@ -1,5 +1,5 @@
 ARG ARCH="amd64"
-ARG TAG="v3.24.1"
+ARG TAG="v3.24.5"
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base:15.3.17.20.12
 ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20220223
