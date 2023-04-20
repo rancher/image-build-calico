@@ -153,7 +153,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
-FROM centos:7 AS runit-amd64
+FROM centos:8 AS runit-amd64
 FROM clefos:7 AS runit-s390x
 FROM runit-${ARCH} AS runit
 ARG RUNIT_VER=2.1.2
