@@ -1,6 +1,6 @@
 ARG ARCH="amd64"
-ARG TAG="v3.25.0"
-ARG BCI_IMAGE=registry.suse.com/bci/bci-base:15.3.17.20.12
+ARG TAG="v3.25.1"
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:15.4.27.14.55
 ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20221011
 ARG GO_BORING=goboring/golang:1.16.7b7
