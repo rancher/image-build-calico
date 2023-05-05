@@ -1,12 +1,9 @@
 ARG ARCH="amd64"
 ARG TAG="v3.25.1"
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base:15.4.27.14.55
-ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
-ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.0.1-build20221011
-ARG GO_BORING=goboring/golang:1.16.7b7
-# Not yet a 1.19.1 available
-ARG GOBORING_GOLANG_VERSION=1.18.6
-ARG GOBORING_BUILD=7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.20.4b8
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.2.0-build20230512
+ARG GOEXPERIMENT=boringcrypto
 
 FROM ${BCI_IMAGE} as bci
 FROM ${CNI_IMAGE} as cni
@@ -22,32 +19,14 @@ RUN set -x \
     git \
     linux-headers \
     make \
-    patch
+    patch \
+    libbpf-dev \
+    libelf-static \
+    zlib-static
 RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
-
-# Image for projectcalico/node. Because of libbpf-dev and libelf-dev dependencies we can't use Alpine. Not needed in s390x
-FROM ${GO_BORING} AS calico-node-builder-amd64
-ARG ARCH
-ARG GOBORING_GOLANG_VERSION
-ARG GOBORING_BUILD
-RUN apt -y update && apt -y upgrade && apt install -y file libbpf-dev gcc build-essential libelf-dev
-ADD https://go-boringcrypto.storage.googleapis.com/go${GOBORING_GOLANG_VERSION}b${GOBORING_BUILD}.src.tar.gz /usr/local/boring.tgz
-WORKDIR /usr/local/boring
-RUN tar xzf ../boring.tgz
-WORKDIR /usr/local/boring/go/src
-RUN ./make.bash
-RUN rm -fr /usr/local/go/
-RUN cp -r /usr/local/boring/go/ /usr/local/go/
-COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
-COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
-
-# We need a different image for s390x because goboring installation is not supported
-FROM builder AS calico-node-builder-s390x
-COPY --from=builder /usr/local/go/bin/go-assert-boring.sh /usr/local/go/bin/go-assert-static.sh /usr/local/go/bin/go-build-static.sh /usr/local/go/bin/
-COPY --from=builder $GOPATH/src/github.com/projectcalico/calico $GOPATH/src/github.com/projectcalico/calico
 
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
@@ -63,6 +42,7 @@ FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
 FROM builder AS calico_ctl
 ARG ARCH
 ARG TAG
+ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/calicoctl
 RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.VERSION=${TAG} \
@@ -79,6 +59,7 @@ RUN calicoctl --version
 FROM builder AS calico_cni
 ARG ARCH
 ARG TAG
+ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/cni-plugin
 COPY dualStack-changes.patch .
 # Apply the patch only in versions v3.20 and v3.21. It is already part of v3.22
@@ -96,9 +77,10 @@ RUN install -s bin/* /opt/cni/bin/
 
 ### BEGIN CALICO NODE ###
 ### Can't use go-build-static.sh due to -Wl and --fatal-warnings flags ###
-FROM calico-node-builder-${ARCH} AS calico_node
+FROM builder AS calico_node
 ARG ARCH
 ARG TAG
+ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN go mod download
 ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz"
@@ -128,6 +110,7 @@ RUN install -s bin/calico-node /usr/local/bin
 
 ### BEGIN CALICO POD2DAEMON ###
 FROM builder AS calico_pod2daemon
+ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/pod2daemon
 ENV GO_LDFLAGS="-linkmode=external"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/flexvoldriver ./flexvol
@@ -139,6 +122,7 @@ RUN install -D -s bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
 ### BEGIN CALICO KUBE-CONTROLLERS ###
 FROM builder AS calico_kubecontrollers
 ARG TAG
+ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/kube-controllers
 RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/kube-controllers/main.VERSION=${TAG}" \
