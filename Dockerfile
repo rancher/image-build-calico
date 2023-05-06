@@ -169,6 +169,21 @@ COPY --from=cni	/opt/cni/                            /opt/cni/
 COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
 COPY --from=runit /opt/local/command/                /usr/sbin/
 
+FROM scratch AS calico_rootfs_overlay_arm64
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
+COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
+COPY --from=calico_ctl /usr/local/bin/calicoctl      /calicoctl
+COPY --from=calico_bird /bird*                       /usr/bin/
+COPY --from=calico/bpftool:v5.3-amd64 /bpftool       /usr/sbin/
+COPY --from=calico_pod2daemon /usr/local/bin/        /usr/local/bin/
+COPY --from=calico_kubecontrollers /usr/local/bin/   /usr/bin/
+COPY --from=calico_cni /opt/cni/                     /opt/cni/
+COPY --from=cni	/opt/cni/                            /opt/cni/
+COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
+COPY --from=runit /opt/local/command/                /usr/sbin/
+
 FROM scratch AS calico_rootfs_overlay_s390x
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
