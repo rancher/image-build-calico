@@ -1,7 +1,7 @@
 SEVERITIES = HIGH,CRITICAL
 
 ifeq ($(ARCH),)
-ARCH=$(shell go env GOARCH)
+	ARCH=$(shell go env GOARCH)
 endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
@@ -13,11 +13,11 @@ K3S_ROOT_VERSION ?= v0.11.0
 CNI_PLUGINS_VERSION ?= v1.2.0
 
 ifneq ($(DRONE_TAG),)
-TAG := $(DRONE_TAG)
+	TAG := $(DRONE_TAG)
 endif
 
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
-$(error TAG needs to end with build metadata: $(BUILD_META))
+	$(error TAG needs to end with build metadata: $(BUILD_META))
 endif
 
 .PHONY: image-build

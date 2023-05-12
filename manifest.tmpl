@@ -6,6 +6,11 @@ manifests:
       architecture: amd64
       os: linux
   -
+    image: rancher/hardened-calico:{{build.tag}}-arm64
+    platform:
+      architecture: arm64
+      os: linux
+  -
     image: rancher/hardened-calico:{{build.tag}}-s390x
     platform:
       architecture: s390x
