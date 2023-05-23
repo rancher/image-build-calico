@@ -94,7 +94,7 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) -extldflags \"-static\"" \
     -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
-RUN if [ "${ARCH}" = "s390x" || "${ARCH}" = "arm64" ]; then \  
+RUN if [ "${ARCH}" != "amd64" ]; then \  
     CGO_ENABLED=0 && CGO_LDFLAGS="" && go build -ldflags "-linkmode=external \
     -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
