@@ -3,6 +3,7 @@ ARG TAG="v3.25.1"
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base
 ARG GO_IMAGE=rancher/hardened-build-base:v1.20.4b11
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.2.0-build20230523
+ARG GOEXPERIMENT=boringcrypto
 
 FROM ${BCI_IMAGE} as bci
 FROM ${CNI_IMAGE} as cni
