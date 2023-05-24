@@ -1,8 +1,8 @@
 ARG ARCH="amd64"
 ARG TAG="v3.25.1"
-ARG BCI_IMAGE=registry.suse.com/bci/bci-base:15.4.27.14.55
-ARG GO_IMAGE=rancher/hardened-build-base:v1.20.4b8
-ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.2.0-build20230512
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base
+ARG GO_IMAGE=rancher/hardened-build-base:v1.20.4b11
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.2.0-build20230523
 ARG GOEXPERIMENT=boringcrypto
 
 FROM ${BCI_IMAGE} as bci
@@ -10,8 +10,8 @@ FROM ${CNI_IMAGE} as cni
 FROM ${GO_IMAGE} as builder
 # setup required packages
 ARG TAG
-RUN set -x \
- && apk --no-cache add \
+RUN set -x && \
+    apk --no-cache add \
     bash \
     curl \
     file \
@@ -94,7 +94,7 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) -extldflags \"-static\"" \
     -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
-RUN if [ "${ARCH}" = "s390x" ]; then \  
+RUN if [ "${ARCH}" != "amd64" ]; then \  
     CGO_ENABLED=0 && CGO_LDFLAGS="" && go build -ldflags "-linkmode=external \
     -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
@@ -138,6 +138,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
 FROM centos:7 AS runit-amd64
+FROM centos:7 AS runit-arm64
 FROM clefos:7 AS runit-s390x
 FROM runit-${ARCH} AS runit
 ARG RUNIT_VER=2.1.2
@@ -162,6 +163,21 @@ COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
 COPY --from=calico_ctl /usr/local/bin/calicoctl      /calicoctl
 COPY --from=calico_bird /bird*                       /usr/bin/
 COPY --from=calico/bpftool:v5.3-amd64 /bpftool       /usr/sbin/
+COPY --from=calico_pod2daemon /usr/local/bin/        /usr/local/bin/
+COPY --from=calico_kubecontrollers /usr/local/bin/   /usr/bin/
+COPY --from=calico_cni /opt/cni/                     /opt/cni/
+COPY --from=cni	/opt/cni/                            /opt/cni/
+COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
+COPY --from=runit /opt/local/command/                /usr/sbin/
+
+FROM scratch AS calico_rootfs_overlay_arm64
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
+COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
+COPY --from=calico_ctl /usr/local/bin/calicoctl      /calicoctl
+COPY --from=calico_bird /bird*                       /usr/bin/
+COPY --from=calico/bpftool:v5.3-arm64 /bpftool       /usr/sbin/
 COPY --from=calico_pod2daemon /usr/local/bin/        /usr/local/bin/
 COPY --from=calico_kubecontrollers /usr/local/bin/   /usr/bin/
 COPY --from=calico_cni /opt/cni/                     /opt/cni/
@@ -206,6 +222,6 @@ RUN zypper update -y && \
     rm -rf /var/cache/zypp/packages
 COPY --from=calico_rootfs_overlay / /
 ENV PATH=$PATH:/opt/cni/bin
-RUN set -x \
- && test -e /opt/cni/bin/install \
- && ln -vs /opt/cni/bin/install /install-cni \
+RUN set -x && \
+    test -e /opt/cni/bin/install && \
+    ln -vs /opt/cni/bin/install /install-cni \
