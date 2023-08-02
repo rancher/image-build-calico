@@ -12,7 +12,7 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.25.1$(BUILD_META)
+TAG ?= v3.26.1$(BUILD_META)
 
 K3S_ROOT_VERSION ?= v0.11.0
 
