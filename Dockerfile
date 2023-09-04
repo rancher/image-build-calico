@@ -1,7 +1,7 @@
 ARG ARCH="amd64"
 ARG TAG="v3.26.1"
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base
-ARG GO_IMAGE=rancher/hardened-build-base:v1.20.7b2
+ARG GO_IMAGE=rancher/hardened-build-base:v1.20.7b3
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.2.0-build20230523
 ARG GOEXPERIMENT=boringcrypto
 
