@@ -1,8 +1,8 @@
 ARG ARCH="amd64"
-ARG TAG="v3.26.3"
+ARG TAG="v3.27.0"
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base
-ARG GO_IMAGE=rancher/hardened-build-base:v1.20.7b3
-ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.2.0-build20230523
+ARG GO_IMAGE=rancher/hardened-build-base:v1.21.6b2
+ARG CNI_IMAGE=rancher/hardened-cni-plugins:v1.4.0-build20240122
 ARG GOEXPERIMENT=boringcrypto
 
 FROM ${BCI_IMAGE} as bci
@@ -21,7 +21,9 @@ RUN set -x && \
     make \
     patch \
     libbpf-dev \
+    libpcap-dev \
     libelf-static \
+    zstd-static \
     zlib-static
 RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
@@ -31,7 +33,7 @@ RUN git checkout tags/${TAG} -b ${TAG}
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
 ARG ARCH
-ARG K3S_ROOT_VERSION=v0.11.0
+ARG K3S_ROOT_VERSION=v0.13.0
 ADD https://github.com/rancher/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-xtables-${ARCH}.tar /opt/xtables/k3s-root-xtables.tar
 RUN tar xvf /opt/xtables/k3s-root-xtables.tar -C /opt/xtables
 ### END K3S XTABLES #####
@@ -83,7 +85,7 @@ ARG TAG
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN go mod download
-ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz"
+ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz -lzstd"
 ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl"
 ENV CGO_ENABLED=1
 RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C ../felix/bpf-gpl/include/libbpf/src BUILD_STATIC_ONLY=1; fi
