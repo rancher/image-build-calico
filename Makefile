@@ -12,11 +12,9 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.26.3$(BUILD_META)
+TAG ?= v3.27.0$(BUILD_META)
 
-K3S_ROOT_VERSION ?= v0.11.0
-
-CNI_PLUGINS_VERSION ?= v1.2.0
+K3S_ROOT_VERSION ?= v0.13.0
 
 ifneq ($(DRONE_TAG),)
 	TAG := $(DRONE_TAG)
@@ -31,7 +29,6 @@ image-build:
 	DOCKER_BUILDKIT=1 docker build --no-cache \
 		--pull \
 		--build-arg ARCH=$(ARCH) \
-		--build-arg CNI_PLUGINS_VERSION=$(CNI_PLUGINS_VERSION) \
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
 		--tag $(ORG)/hardened-calico:$(TAG) \
