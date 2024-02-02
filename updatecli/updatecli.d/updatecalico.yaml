@@ -1,0 +1,74 @@
+---
+name: "Update calico version" 
+
+sources:
+ calico:
+   name: Get calico version
+   kind: githubrelease
+   spec:
+     owner: projectcalico
+     repository: calico
+     token: '{{ requiredEnv .github.token }}'
+     typefilter:
+       release: true
+       draft: false
+       prerelease: false
+     versionfilter:
+       kind: latest
+
+targets:
+  dockerfile:
+    name: "Bump to latest calico version in Dockerfile"
+    kind: dockerfile
+    scmid: default
+    sourceid: calico
+    spec:
+      file: "Dockerfile"
+      instruction:
+        keyword: "ARG"
+        matcher: "TAG"
+
+  makefile:
+    name: "Bump to latest calico version in Makefile"
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Makefile
+      matchpattern: '(?m)^TAG \?\= (.*)'
+      replacepattern: 'TAG ?= {{ source "calico" }}$$(BUILD_META)'
+
+  readme:
+    name: "Bump to latest calico version in README"
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: README.md
+      matchpattern: '(?m)^TAG=(.*)'
+      replacepattern: 'TAG={{ source "calico" }} make'
+
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.username }}'
+      email: '{{ .github.email }}'
+      owner: '{{ .github.owner }}'
+      repository: '{{ .github.repository }}'
+      branch: '{{ .github.branch }}'
+      
+actions:
+    default:
+        title: 'Bump calico version to {{ source "calico" }}'
+        kind: github/pullrequest
+        spec:
+            automerge: false
+            labels:
+                - chore
+                - skip-changelog
+                - status/auto-created 
+        scmid: default
