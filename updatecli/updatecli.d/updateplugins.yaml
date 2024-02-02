@@ -1,0 +1,53 @@
+---
+name: "Update cniplugins version" 
+
+sources:
+ cniplugins:
+   name: Get cniplugins version
+   kind: githubrelease
+   spec:
+     owner: rancher
+     repository: image-build-cni-plugins
+     token: '{{ requiredEnv .github.token }}'
+     typefilter:
+       release: true
+       draft: false
+       prerelease: false
+     versionfilter:
+       kind: latest
+
+targets:
+  dockerfile:
+    name: "Bump to latest cniplugins version in Dockerfile"
+    kind: dockerfile
+    scmid: default
+    sourceid: cniplugins
+    spec:
+      file: "Dockerfile"
+      instruction:
+        keyword: "ARG"
+        matcher: "CNI_IMAGE_VERSION"
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      email: '{{ .github.email }}'
+      owner: '{{ .github.owner }}'
+      repository: '{{ .github.repository }}'
+      branch: '{{ .github.branch }}'
+      
+actions:
+    default:
+        title: 'Bump cniplugins version to {{ source "cniplugins" }}'
+        kind: github/pullrequest
+        spec:
+            automerge: false
+            labels:
+                - chore
+                - skip-changelog
+                - status/auto-created
+        scmid: default
+
