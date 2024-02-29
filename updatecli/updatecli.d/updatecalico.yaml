@@ -38,17 +38,6 @@ targets:
       matchpattern: '(?m)^TAG \?\= (.*)'
       replacepattern: 'TAG ?= {{ source "calico" }}$$(BUILD_META)'
 
-  readme:
-    name: "Bump to latest calico version in README"
-    kind: file
-    scmid: default
-    disablesourceinput: true
-    spec:
-      file: README.md
-      matchpattern: '(?m)^TAG=(.*)'
-      replacepattern: 'TAG={{ source "calico" }} make'
-
-
 scms:
   default:
     kind: github

@@ -21,7 +21,7 @@ ifneq ($(DRONE_TAG),)
 endif
 
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
-	$(error TAG needs to end with build metadata: $(BUILD_META))
+$(error TAG needs to end with build metadata: $(BUILD_META))
 endif
 
 .PHONY: image-build
