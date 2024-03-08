@@ -69,7 +69,7 @@ RUN if [[ "${TAG}" =~ "v3.20" || "${TAG}" =~ "v3.21" ]]; then patch -p1 < dualSt
 ENV GO_LDFLAGS="-linkmode=external -X main.VERSION=${TAG}"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/calico
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
-RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/install ./cmd/calico
+RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/install ./cmd/install
 RUN go-assert-static.sh bin/*
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN mkdir -vp /opt/cni/bin
