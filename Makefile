@@ -16,10 +16,6 @@ TAG ?= v3.27.2$(BUILD_META)
 
 K3S_ROOT_VERSION ?= v0.13.0
 
-ifneq ($(DRONE_TAG),)
-	TAG := $(DRONE_TAG)
-endif
-
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG needs to end with build metadata: $(BUILD_META))
 endif
