@@ -159,6 +159,7 @@ RUN ./package/install
 # gather all of the disparate calico bits into a rootfs overlay
 FROM scratch AS calico_rootfs_overlay_amd64
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/confd/etc/                 /etc/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
@@ -174,6 +175,7 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM scratch AS calico_rootfs_overlay_arm64
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/confd/etc/                 /etc/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
