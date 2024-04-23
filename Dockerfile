@@ -97,7 +97,7 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN if [ "${ARCH}" != "amd64" ]; then \  
-    CGO_ENABLED=0 && CGO_LDFLAGS="" && go build -ldflags "-linkmode=external \
+    CGO_LDFLAGS="-lelf -lz -lzstd" && CGO_CFLAGS="" && go build -ldflags "-linkmode=external \
     -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
