@@ -19,13 +19,12 @@ K3S_ROOT_VERSION ?= v0.13.0
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
-
+ARCH=arm64
 .PHONY: image-build
 image-build:
 	docker buildx build --no-cache \
 		--platform=$(ARCH) \
 		--pull \
-		--build-arg ARCH=$(ARCH) \
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
 		--tag $(ORG)/hardened-calico:$(TAG) \
