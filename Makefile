@@ -19,7 +19,7 @@ K3S_ROOT_VERSION ?= v0.13.0
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
-ARCH=arm64
+
 .PHONY: image-build
 image-build:
 	docker buildx build --no-cache \
