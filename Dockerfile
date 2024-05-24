@@ -29,7 +29,7 @@ RUN set -x && \
     xx-apk --no-cache add musl-dev gcc
     
 FROM base-builder as builder
-ARG TAG=v3.27.3
+ARG TAG=v3.28.0
 RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
@@ -49,7 +49,7 @@ FROM calico/bird:v0.3.3-184-g202a2186-${TARGETARCH} AS calico_bird
 
 ### BEGIN CALICOCTL ###
 FROM builder AS calico_ctl
-ARG TAG=v3.27.3
+ARG TAG=v3.28.0
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/calicoctl
 ARG TARGETARCH
@@ -67,7 +67,7 @@ RUN calicoctl --version
 
 ### BEGIN CALICO CNI ###
 FROM builder AS calico_cni
-ARG TAG=v3.27.3
+ARG TAG=v3.28.0
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/cni-plugin
 COPY dualStack-changes.patch .
@@ -92,7 +92,7 @@ RUN install bin/* /opt/cni/bin/
 ### so we need a need a dedicated builder for emulated build
 FROM ${GO_IMAGE} as nodebuilder
 # setup required packages
-ARG TAG=v3.27.3
+ARG TAG=v3.28.0
 RUN set -x && \
     apk --no-cache add \
     bash \
@@ -116,7 +116,7 @@ RUN git checkout tags/${TAG} -b ${TAG}
 ### Can't use go-build-static.sh due to -Wl and --fatal-warnings flags ###
 FROM nodebuilder AS calico_node
 ARG ARCH
-ARG TAG=v3.27.3
+ARG TAG=v3.28.0
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN go mod download
@@ -150,7 +150,7 @@ RUN install -D bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
 
 ### BEGIN CALICO KUBE-CONTROLLERS ###
 FROM builder AS calico_kubecontrollers
-ARG TAG=v3.27.3
+ARG TAG=v3.28.0
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/kube-controllers
 ARG TARGETPLATFORM
