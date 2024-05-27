@@ -117,7 +117,7 @@ WORKDIR $GOPATH/src/github.com/projectcalico/calico/pod2daemon
 ENV GO_LDFLAGS="-linkmode=external"
 RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/flexvoldriver ./flexvol
 RUN go-assert-static.sh bin/*
-RUN install -m 0755 flexvol/docker/flexvol.sh /usr/local/bin/
+RUN install -m 0755 flexvol/docker-image/flexvol.sh /usr/local/bin/
 RUN install -D -s bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
 ### END CALICO POD2DAEMON #####
 
@@ -159,7 +159,7 @@ RUN ./package/install
 # gather all of the disparate calico bits into a rootfs overlay
 FROM scratch AS calico_rootfs_overlay_amd64
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
-COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/licenses/  /licenses/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
 COPY --from=calico_ctl /usr/local/bin/calicoctl      /calicoctl
@@ -174,7 +174,7 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM scratch AS calico_rootfs_overlay_arm64
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
-COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/licenses/  /licenses/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
 COPY --from=calico_ctl /usr/local/bin/calicoctl      /calicoctl
@@ -189,7 +189,7 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM scratch AS calico_rootfs_overlay_s390x
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/etc/       /etc/
-COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/licenses/  /licenses/
+COPY --from=calico_node /go/src/github.com/projectcalico/calico/licenses/  /licenses/
 COPY --from=calico_node /go/src/github.com/projectcalico/calico/node/filesystem/sbin/      /usr/sbin/
 COPY --from=calico_node /usr/local/bin/      	     /usr/bin/
 COPY --from=calico_ctl /usr/local/bin/calicoctl      /calicoctl
