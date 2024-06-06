@@ -12,9 +12,13 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= v3.28.0$(BUILD_META)
+TAG ?= ${GITHUB_ACTION_TAG}
 
 K3S_ROOT_VERSION ?= v0.13.0
+
+ifeq ($(TAG),)
+TAG := v3.28.0$(BUILD_META)
+endif
 
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
@@ -43,7 +47,7 @@ image-scan:
 PHONY: log
 log:
 	@echo "ARCH=$(ARCH)"
-	@echo "TAG=$(TAG)"
+	@echo "TAG=$(TAG:$(BUILD_META)=)"
 	@echo "ORG=$(ORG)"
 	@echo "PKG=$(PKG)"
 	@echo "SRC=$(SRC)"
