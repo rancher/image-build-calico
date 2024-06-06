@@ -16,6 +16,11 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
+    - name: Set the TAG value
+      id: get-TAG
+      run: |
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
@@ -75,6 +80,11 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+
+    - name: Set the TAG value
+      id: get-TAG
+      run: |
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
