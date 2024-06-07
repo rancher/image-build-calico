@@ -4,6 +4,7 @@ on:
 
 env:
   REGISTRY_IMAGE: rancher/hardened-calico
+  GITHUB_ACTION_TAG: ${{ github.ref_name }}  
 
 jobs:
   build-amd64-digest:
@@ -14,6 +15,11 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+
+    - name: Set the TAG value
+      id: get-TAG
+      run: |
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -49,6 +55,8 @@ jobs:
         platforms: linux/amd64
         labels: ${{ steps.meta-amd64.outputs.labels }}
         outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+        build-args: |
+          TAG=${{ env.TAG }}
 
     - name: Export digest
       run: |
@@ -72,6 +80,11 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+
+    - name: Set the TAG value
+      id: get-TAG
+      run: |
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -107,6 +120,8 @@ jobs:
         platforms: linux/arm64
         labels: ${{ steps.meta-arm64.outputs.labels }}
         outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+        build-args: |
+          TAG=${{ env.TAG }}
 
     - name: Export digest
       run: |
