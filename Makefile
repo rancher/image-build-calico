@@ -12,7 +12,7 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= ${GITHUB_ACTION_TAG}
+TAG ?= v3.28.0$(BUILD_META)
 
 K3S_ROOT_VERSION ?= v0.13.0
 
