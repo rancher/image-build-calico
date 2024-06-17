@@ -48,7 +48,7 @@ jobs:
 
     - name: Build container image
       id: build-amd64
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: Dockerfile
@@ -113,7 +113,7 @@ jobs:
 
     - name: Build container image
       id: build-arm64
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: Dockerfile
