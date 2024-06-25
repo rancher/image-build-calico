@@ -16,10 +16,11 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Set the TAG value
-      id: get-TAG
+    - name: Set the ENV values
+      id: get-Envs
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -57,6 +58,7 @@ jobs:
         outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
         build-args: |
           TAG=${{ env.TAG }}
+          ARCH=${{ env.ARCH }}
 
     - name: Export digest
       run: |
@@ -81,10 +83,11 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Set the TAG value
-      id: get-TAG
+    - name: Set the ENV values
+      id: get-Envs
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -122,6 +125,7 @@ jobs:
         outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
         build-args: |
           TAG=${{ env.TAG }}
+          ARCH=${{ env.ARCH }}
 
     - name: Export digest
       run: |
