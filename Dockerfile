@@ -139,15 +139,15 @@ RUN install -D -s bin/check-status /usr/local/bin/
 
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
-FROM centos:7 AS runit-amd64
-FROM centos:7 AS runit-arm64
-FROM clefos:7 AS runit-s390x
-FROM runit-${ARCH} AS runit
+FROM ${BCI_IMAGE} AS runit
 ARG RUNIT_VER=2.1.2
 # Install build dependencies and security updates.
-RUN yum install -y rpm-build yum-utils make && \
-    yum install -y wget glibc-static gcc    && \
-    yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
+# RUN yum install -y rpm-build yum-utils make && \
+#     yum install -y wget glibc-static gcc    && \
+#     yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
+RUN zypper update -y && \
+    zypper install -y  \ 
+    make gcc wget glibc-devel glibc-devel-static
 # runit is not available in bci or CentOS repos so build it.
 ADD http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz /tmp/runit.tar.gz
 WORKDIR /opt/local
