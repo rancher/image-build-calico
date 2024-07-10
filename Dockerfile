@@ -227,3 +227,4 @@ ENV PATH=$PATH:/opt/cni/bin
 RUN set -x && \
     test -e /opt/cni/bin/install && \
     ln -vs /opt/cni/bin/install /install-cni
+
