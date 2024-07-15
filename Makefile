@@ -17,7 +17,7 @@ TAG ?= ${GITHUB_ACTION_TAG}
 K3S_ROOT_VERSION ?= v0.14.0
 
 ifeq ($(TAG),)
-TAG := v3.28.0$(BUILD_META)
+TAG := v3.27.4$(BUILD_META)
 endif
 
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
