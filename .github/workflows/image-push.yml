@@ -22,9 +22,6 @@ jobs:
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
     - name: Docker meta
       id: meta-amd64
       uses: docker/metadata-action@v5
@@ -38,27 +35,24 @@ jobs:
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
     - name: Login to Container Registry
       uses: docker/login-action@v3
       with:
         username: ${{ env.DOCKER_USERNAME }}
         password: ${{ env.DOCKER_PASSWORD }}
 
-    - name: Build container image
+    - name: Build and push container image
       id: build-amd64
-      uses: docker/build-push-action@v6
+      uses: rancher/ecm-distro-tools/actions/publish-image@master
+      env: 
+        META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
-        context: .
-        file: Dockerfile
-        platforms: linux/amd64
-        labels: ${{ steps.meta-amd64.outputs.labels }}
-        outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-        build-args: |
-          TAG=${{ env.TAG }}
-          ARCH=${{ env.ARCH }}
+        image: hardened-calico
+        tag: ${{ github.event.release.tag_name }}
+        public-repo: rancher
+        public-username: ${{ env.DOCKER_USERNAME }}
+        public-password: ${{ env.DOCKER_PASSWORD }}
+        push-to-prime: false
 
     - name: Export digest
       run: |
@@ -89,9 +83,6 @@ jobs:
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
     - name: Docker meta
       id: meta-arm64
       uses: docker/metadata-action@v5
@@ -105,27 +96,24 @@ jobs:
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
     - name: Login to Container Registry
       uses: docker/login-action@v3
       with:
         username: ${{ env.DOCKER_USERNAME }}
         password: ${{ env.DOCKER_PASSWORD }}
 
-    - name: Build container image
+    - name: Build and push container image
       id: build-arm64
-      uses: docker/build-push-action@v6
+      uses: rancher/ecm-distro-tools/actions/publish-image@master
+      env: 
+        META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
-        context: .
-        file: Dockerfile
-        platforms: linux/arm64
-        labels: ${{ steps.meta-arm64.outputs.labels }}
-        outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-        build-args: |
-          TAG=${{ env.TAG }}
-          ARCH=${{ env.ARCH }}
+        image: hardened-calico
+        tag: ${{ github.event.release.tag_name }}
+        public-repo: rancher
+        public-username: ${{ env.DOCKER_USERNAME }}
+        public-password: ${{ env.DOCKER_PASSWORD }}
+        push-to-prime: false
 
     - name: Export digest
       run: |
@@ -155,9 +143,6 @@ jobs:
           path: /tmp/digests
           pattern: digests-*
           merge-multiple: true
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       
       - name: Docker meta
         id: meta
