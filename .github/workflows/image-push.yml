@@ -48,11 +48,6 @@ jobs:
         public-password: ${{ env.DOCKER_PASSWORD }}
         push-to-prime: false
 
-    - name: Export digest
-      run: |
-        mkdir -p /tmp/digests
-        echo "${{ steps.build-amd64.outputs.DIGEST_SHA }}" > "/tmp/digests/${{ steps.build-amd64.outputs.DIGEST_SHA }}"
-
     - name: Upload digest
       uses: actions/upload-artifact@v4
       with:
@@ -102,11 +97,6 @@ jobs:
         public-password: ${{ env.DOCKER_PASSWORD }}
         push-to-prime: false
 
-    - name: Export digest
-      run: |
-        mkdir -p /tmp/digests
-        echo "${{ steps.build-arm64.outputs.DIGEST_SHA }}" > "/tmp/digests/${{ steps.build-arm64.outputs.DIGEST_SHA }}"
-
     - name: Upload digest
       uses: actions/upload-artifact@v4
       with:
@@ -149,8 +139,8 @@ jobs:
         id: push-manifest
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         env: 
-          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.docker_meta.outputs.json }}
-          REGISTRY_IMAGEL: ${{ env.REGISTRY_IMAGE }}
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
+          REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         with:
           image: hardened-calico
           tag: ${{ github.event.release.tag_name }}

@@ -64,23 +64,30 @@ push-image:
 		--label $(META_LABELS) \
 		--push \
 		--iidfile /tmp/image.digest \
+		--metadata-file /tmp/metadata.json \
 		.
 
-	@echo "DIGEST=$(shell cat /tmp/image.digest)" >> $(GITHUB_OUTPUT)
-	@echo "DIGEST_SHA=$(shell cat /tmp/image.digest | sed 's/^sha256://')" >> $(GITHUB_OUTPUT)
+	# Create directory for storing digests
+	@mkdir -p /tmp/digests
+
+	FULL_DIGEST := $(shell jq -r '.containerimage.digest' /tmp/metadata.json)
+	DIGEST_SHA := $(shell echo $(FULL_DIGEST) | sed 's/^sha256://')
+
+	@echo $(DIGEST_SHA) > "/tmp/digests/$(DIGEST_SHA)"
 
 
 .PHONY: manifest-push
 manifest-push:
-	@echo "Creating and pushing manifest list..."
-	
-	# tag from Docker metadata JSON
-	$(eval TAGS := $(shell echo '$(DOCKER_METADATA_OUTPUT_JSON)' | jq -r '.tags | map("-t " + .) | join(" ")'))
-	
-	# digest files and format them for docker buildx
-	$(eval DIGESTS := $(shell for file in *; do echo -n "$(REGISTRY_IMAGE)@sha256:$$file "; done))
-	
-	docker buildx imagetools create $(TAGS) $(DIGESTS)
+	TAGS := $(shell echo '$(DOCKER_METADATA_OUTPUT_JSON)' | jq -r '.tags | map("-t " + .) | join(" ")')
+
+	IMAGE_DIGESTS := $(shell for digest_file in *; do \
+		echo -n "$(REGISTRY_IMAGE)@sha256:$$digest_file "; \
+	done)
+
+	@echo "Tags to be used: $(TAGS)"
+	@echo "Image digests: $(IMAGE_DIGESTS)"
+
+	docker buildx imagetools create $(TAGS) $(IMAGE_DIGESTS)
 
 .PHONY: image-push
 image-push:
