@@ -63,7 +63,24 @@ push-image:
 		--tag $(IMAGE)-$(ARCH) \
 		--label $(META_LABELS) \
 		--push \
+		--iidfile /tmp/image.digest \
 		.
+
+	@echo "DIGEST=$(shell cat /tmp/image.digest)" >> $(GITHUB_OUTPUT)
+	@echo "DIGEST_SHA=$(shell cat /tmp/image.digest | sed 's/^sha256://')" >> $(GITHUB_OUTPUT)
+
+
+.PHONY: manifest-push
+manifest-push:
+	@echo "Creating and pushing manifest list..."
+	
+	# tag from Docker metadata JSON
+	$(eval TAGS := $(shell echo '$(DOCKER_METADATA_OUTPUT_JSON)' | jq -r '.tags | map("-t " + .) | join(" ")'))
+	
+	# digest files and format them for docker buildx
+	$(eval DIGESTS := $(shell for file in *; do echo -n "$(REGISTRY_IMAGE)@sha256:$$file "; done))
+	
+	docker buildx imagetools create $(TAGS) $(DIGESTS)
 
 .PHONY: image-push
 image-push:
