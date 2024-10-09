@@ -12,6 +12,8 @@ jobs:
       contents: read
       id-token: write
     runs-on: runs-on,runner=4cpu-linux-x64,run-id=${{ github.run_id }}
+    outputs:
+      digest: ${{ steps.digest.outputs.digest }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -33,7 +35,10 @@ jobs:
       with:
         secrets: |
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD
+          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
 
     - name: Build and push container image
       id: build-amd64
@@ -43,24 +48,29 @@ jobs:
       with:
         image: hardened-calico
         tag: ${{ github.event.release.tag_name }}
+
         public-repo: rancher
         public-username: ${{ env.DOCKER_USERNAME }}
         public-password: ${{ env.DOCKER_PASSWORD }}
-        push-to-prime: false
 
-    - name: Upload digest
-      uses: actions/upload-artifact@v4
-      with:
-        name: digests-linux-amd64
-        path: /tmp/digests/*
-        if-no-files-found: error
-        retention-days: 1
+        prime-repo: rancher
+        prime-registry: ${{ env.PRIME_REGISTRY }}
+        prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
+    - name: Digest
+      id: digest
+      run: |
+        IMAGE_DIGEST=$(jq -r '.["containerimage.digest"]' /tmp/metadata.json)
+        echo "digest=$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
 
   build-arm64-digest:
     permissions:
       contents: read
       id-token: write
     runs-on: runs-on,runner=4cpu-linux-arm64,run-id=${{ github.run_id }}
+    outputs:
+      digest: ${{ steps.digest.outputs.digest }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -82,7 +92,10 @@ jobs:
       with:
         secrets: |
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD
+          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
 
     - name: Build and push container image
       id: build-arm64
@@ -92,18 +105,21 @@ jobs:
       with:
         image: hardened-calico
         tag: ${{ github.event.release.tag_name }}
+
         public-repo: rancher
         public-username: ${{ env.DOCKER_USERNAME }}
         public-password: ${{ env.DOCKER_PASSWORD }}
-        push-to-prime: false
 
-    - name: Upload digest
-      uses: actions/upload-artifact@v4
-      with:
-        name: digests-linux-arm64
-        path: /tmp/digests/*
-        if-no-files-found: error
-        retention-days: 1
+        prime-repo: rancher
+        prime-registry: ${{ env.PRIME_REGISTRY }}
+        prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
+    - name: Digest
+      id: digest
+      run: |
+        IMAGE_DIGEST=$(jq -r '.["containerimage.digest"]' /tmp/metadata.json)
+        echo "digest=$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
 
   merge:
     permissions:
@@ -114,13 +130,6 @@ jobs:
       - build-amd64-digest
       - build-arm64-digest
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-*
-          merge-multiple: true
-      
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -132,24 +141,32 @@ jobs:
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD
+            secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
 
       - name: Create manifest list and push
-        working-directory: /tmp/digests
         id: push-manifest
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         env: 
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
+          IMAGE_DIGESTS: ${{ needs.build-amd64-digest.outputs.digest }} ${{ needs.build-arm64-digest.outputs.digest }}
         with:
+          make-target: manifest-push
           image: hardened-calico
           tag: ${{ github.event.release.tag_name }}
+
           public-repo: rancher
           public-username: ${{ env.DOCKER_USERNAME }}
           public-password: ${{ env.DOCKER_PASSWORD }}
-          push-to-prime: false
-          make-target: manifest-push
-      
+
+          prime-repo: rancher
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
