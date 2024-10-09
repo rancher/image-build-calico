@@ -22,9 +22,9 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
+MACHINE := rancher
 TAG ?= ${GITHUB_ACTION_TAG}
 REGISTRY_IMAGE ?= $(ORG)/hardened-calico
-META_LABELS ?= ${META_LABELS}
 
 K3S_ROOT_VERSION ?= v0.14.0
 
@@ -34,9 +34,15 @@ endif
 
 IMAGE ?= $(REGISTRY_IMAGE):$(TAG)
 
+LABEL_ARGS = $(foreach label,$(META_LABELS),--label $(label))
+
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
+
+buildx-machine:
+	@docker buildx ls | grep $(MACHINE) || \
+		docker buildx create --name=$(MACHINE) --platform=linux/arm64,linux/amd64
 
 .PHONY: image-build
 image-build:
@@ -51,43 +57,24 @@ image-build:
 		.
 
 .PHONY: push-image
-push-image:
+push-image: buildx-machine
 	docker buildx build \
+	    --builder=$(MACHINE) \
 		--sbom=true \
 		--attest type=provenance,mode=max \
 		--platform=$(TARGET_PLATFORMS) \
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
-		--outputs type=image,name=$(REGISTRY_IMAGE),push-by-digest=true,name-canonical=true,push=true \
-		--tag $(IMAGE) \
-		--tag $(IMAGE)-$(ARCH) \
-		--label $(META_LABELS) \
+		--output type=image,name=$(REGISTRY_IMAGE),push-by-digest=true,name-canonical=true,push=true \
+		$(LABEL_ARGS) \
 		--push \
 		--iidfile /tmp/image.digest \
 		--metadata-file /tmp/metadata.json \
 		.
 
-	# Create directory for storing digests
-	@mkdir -p /tmp/digests
-
-	FULL_DIGEST := $(shell jq -r '.containerimage.digest' /tmp/metadata.json)
-	DIGEST_SHA := $(shell echo $(FULL_DIGEST) | sed 's/^sha256://')
-
-	@echo $(DIGEST_SHA) > "/tmp/digests/$(DIGEST_SHA)"
-
-
 .PHONY: manifest-push
 manifest-push:
-	TAGS := $(shell echo '$(DOCKER_METADATA_OUTPUT_JSON)' | jq -r '.tags | map("-t " + .) | join(" ")')
-
-	IMAGE_DIGESTS := $(shell for digest_file in *; do \
-		echo -n "$(REGISTRY_IMAGE)@sha256:$$digest_file "; \
-	done)
-
-	@echo "Tags to be used: $(TAGS)"
-	@echo "Image digests: $(IMAGE_DIGESTS)"
-
-	docker buildx imagetools create $(TAGS) $(IMAGE_DIGESTS)
+	docker buildx imagetools create -t $(IMAGE) -t $(REGISTRY_IMAGE):latest $(IMAGE_DIGESTS)
 
 .PHONY: image-push
 image-push:
@@ -106,3 +93,5 @@ log:
 	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
 	@echo "UNAME_M=$(UNAME_M)"
+	@echo "META_LABELS=$(META_LABELS)"
+	@echo "LABEL_ARGS=$(LABEL_ARGS)"
