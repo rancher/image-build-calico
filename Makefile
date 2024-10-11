@@ -20,18 +20,17 @@ ifndef TARGET_PLATFORMS
 	endif
 endif
 
+K3S_ROOT_VERSION ?= v0.14.0
 BUILD_META=-build$(shell date +%Y%m%d)
-ORG ?= rancher
 MACHINE := rancher
 TAG ?= ${GITHUB_ACTION_TAG}
-REGISTRY_IMAGE ?= $(ORG)/hardened-calico
-
-K3S_ROOT_VERSION ?= v0.14.0
 
 ifeq ($(TAG),)
 TAG := v3.28.2$(BUILD_META)
 endif
 
+REPO ?= rancher
+REGISTRY_IMAGE ?= $(REPO)/hardened-calico
 IMAGE ?= $(REGISTRY_IMAGE):$(TAG)
 
 LABEL_ARGS = $(foreach label,$(META_LABELS),--label $(label))
@@ -60,6 +59,7 @@ image-build:
 push-image: buildx-machine
 	docker buildx build \
 	    --builder=$(MACHINE) \
+		$(IID_FILE_FLAG) \
 		--sbom=true \
 		--attest type=provenance,mode=max \
 		--platform=$(TARGET_PLATFORMS) \
@@ -68,7 +68,6 @@ push-image: buildx-machine
 		--output type=image,name=$(REGISTRY_IMAGE),push-by-digest=true,name-canonical=true,push=true \
 		$(LABEL_ARGS) \
 		--push \
-		--iidfile /tmp/image.digest \
 		--metadata-file /tmp/metadata.json \
 		.
 
@@ -76,19 +75,15 @@ push-image: buildx-machine
 manifest-push:
 	docker buildx imagetools create -t $(IMAGE) -t $(REGISTRY_IMAGE):latest $(IMAGE_DIGESTS)
 
-.PHONY: image-push
-image-push:
-	docker push $(ORG)/hardened-calico:$(TAG)-$(ARCH)
-
 .PHONY: image-scan
 image-scan:
-	trivy image --severity $(SEVERITIES) --no-progress --ignore-unfixed $(ORG)/hardened-calico:$(TAG)
+	trivy image --severity $(SEVERITIES) --no-progress --ignore-unfixed $(IMAGE)
 
 PHONY: log
 log:
 	@echo "ARCH=$(ARCH)"
 	@echo "TAG=$(TAG:$(BUILD_META)=)"
-	@echo "ORG=$(ORG)"
+	@echo "REPO=$(REPO)"
 	@echo "PKG=$(PKG)"
 	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
