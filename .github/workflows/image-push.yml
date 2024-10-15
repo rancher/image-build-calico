@@ -132,6 +132,8 @@ jobs:
       - build-amd64-digest
       - build-arm64-digest
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
