@@ -1,4 +1,4 @@
-ARG ARCH="amd64"
+ARG ARCH=${TARGETARCH}
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base
 ARG GO_IMAGE=rancher/hardened-build-base:v1.22.8b1
 ARG CNI_IMAGE_VERSION=v1.5.1-build20241009
