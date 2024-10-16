@@ -20,6 +20,10 @@ ifndef TARGET_PLATFORMS
 	endif
 endif
 
+IMAGE_DIGESTS ?=
+IID_FILE_FLAG ?=
+IID_FILE_PATH := $(if $(IID_FILE_FLAG),$(word 2, $(IID_FILE_FLAG)))
+
 K3S_ROOT_VERSION ?= v0.14.0
 BUILD_META=-build$(shell date +%Y%m%d)
 MACHINE := rancher
@@ -40,7 +44,7 @@ $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
 
 buildx-machine:
-	@docker buildx ls | grep $(MACHINE) || \
+	docker buildx inspect $(MACHINE) > /dev/null 2>&1 || \
 		docker buildx create --name=$(MACHINE) --platform=linux/arm64,linux/amd64
 
 .PHONY: image-build
@@ -72,8 +76,11 @@ push-image: buildx-machine
 		.
 
 .PHONY: manifest-push
-manifest-push:
-	docker buildx imagetools create -t $(IMAGE) -t $(REGISTRY_IMAGE):latest $(IMAGE_DIGESTS)
+manifest-push: buildx-machine
+	docker buildx imagetools create --builder=$(MACHINE) -t $(IMAGE) -t $(REGISTRY_IMAGE):latest $(IMAGE_DIGESTS)
+ifneq ($(strip $(IID_FILE_PATH)),)
+	docker buildx imagetools inspect --format "{{json .Manifest}}" $(IMAGE) | jq -r '.digest' > "$(IID_FILE_PATH)"
+endif
 
 .PHONY: image-scan
 image-scan:
