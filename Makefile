@@ -24,7 +24,7 @@ IMAGE_DIGESTS ?=
 IID_FILE_FLAG ?=
 IID_FILE_PATH := $(if $(IID_FILE_FLAG),$(word 2, $(IID_FILE_FLAG)))
 
-K3S_ROOT_VERSION ?= v0.14.0
+K3S_ROOT_VERSION ?= v0.14.1
 BUILD_META=-build$(shell date +%Y%m%d)
 MACHINE := rancher
 TAG ?= ${GITHUB_ACTION_TAG}
