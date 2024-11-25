@@ -9,7 +9,7 @@ FROM ${BCI_IMAGE} as bci
 FROM ${CNI_IMAGE} as cni
 FROM ${GO_IMAGE} as builder
 # setup required packages
-ARG TAG=v3.29.0
+ARG TAG=v3.29.1
 RUN set -x && \
     apk --no-cache add \
     bash \
@@ -43,7 +43,7 @@ FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
 ### BEGIN CALICOCTL ###
 FROM builder AS calico_ctl
 ARG ARCH
-ARG TAG=v3.29.0
+ARG TAG=v3.29.1
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/calicoctl
 RUN GO_LDFLAGS="-linkmode=external \
@@ -60,7 +60,7 @@ RUN calicoctl --version
 ### BEGIN CALICO CNI ###
 FROM builder AS calico_cni
 ARG ARCH
-ARG TAG=v3.29.0
+ARG TAG=v3.29.1
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/cni-plugin
 COPY dualStack-changes.patch .
@@ -81,7 +81,7 @@ RUN install -s bin/* /opt/cni/bin/
 ### Can't use go-build-static.sh due to -Wl and --fatal-warnings flags ###
 FROM builder AS calico_node
 ARG ARCH
-ARG TAG=v3.29.0
+ARG TAG=v3.29.1
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN go mod download
@@ -123,7 +123,7 @@ RUN install -D -s bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
 
 ### BEGIN CALICO KUBE-CONTROLLERS ###
 FROM builder AS calico_kubecontrollers
-ARG TAG=v3.29.0
+ARG TAG=v3.29.1
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/kube-controllers
 RUN GO_LDFLAGS="-linkmode=external \
