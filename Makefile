@@ -34,8 +34,8 @@ TAG := v3.29.1$(BUILD_META)
 endif
 
 REPO ?= rancher
-REGISTRY_IMAGE ?= $(REPO)/hardened-calico
-IMAGE ?= $(REGISTRY_IMAGE):$(TAG)
+REGISTRY_IMAGE = $(REPO)/hardened-calico
+IMAGE = $(REGISTRY_IMAGE):$(TAG)
 
 LABEL_ARGS = $(foreach label,$(META_LABELS),--label $(label))
 
@@ -91,6 +91,7 @@ log:
 	@echo "ARCH=$(ARCH)"
 	@echo "TAG=$(TAG:$(BUILD_META)=)"
 	@echo "REPO=$(REPO)"
+	@echo "REGISTRY_IMAGE=$(REGISTRY_IMAGE)"
 	@echo "PKG=$(PKG)"
 	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
