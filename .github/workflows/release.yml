@@ -3,7 +3,6 @@ on:
     types: [published]
 
 env:
-  REGISTRY_IMAGE: rancher/hardened-calico
   GITHUB_ACTION_TAG: ${{ github.ref_name }}  
 
 jobs:
@@ -23,6 +22,7 @@ jobs:
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
 
     - name: Docker meta
       id: meta-amd64
