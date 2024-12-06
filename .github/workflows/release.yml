@@ -81,6 +81,7 @@ jobs:
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
 
     - name: Docker meta
       id: meta-arm64
@@ -134,6 +135,12 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+
+      - name: Set the ENV values
+        id: get-Envs
+        run: |
+          echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
