@@ -88,8 +88,7 @@ manifest-push: $(BUILDDIR) | buildx-machine
 		d=""; \
 		for a in $(MULTI_ARCH); do \
 			f=$(BUILDDIR)/$(subst /,-,$(REGISTRY_IMAGE))-$$a.metadata.json; \
-			echo $$f; \
-			d+="$$(jq -r '.["containerimage.digest"]' $$f) "; \
+			d="$$d $$(jq -r '.["containerimage.digest"]' $$f)"; \
 		done; \
 		docker buildx imagetools create \
 			--builder=$(MACHINE) \
