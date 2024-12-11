@@ -61,7 +61,7 @@ jobs:
     - name: Upload metadata files
       uses: actions/upload-artifact@v4
       with:
-        name: metadata-files
+        name: metadata-amd64
         path: ${{ env.BUILDDIR}}
         if-no-files-found: error
         retention-days: 1
@@ -122,7 +122,7 @@ jobs:
     - name: Upload metadata files
       uses: actions/upload-artifact@v4
       with:
-        name: metadata-files
+        name: metadata-arm64
         path: ${{ env.BUILDDIR}}
         if-no-files-found: error
         retention-days: 1
