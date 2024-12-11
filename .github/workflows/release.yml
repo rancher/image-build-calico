@@ -171,6 +171,7 @@ jobs:
         id: push-manifest
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         env: 
+          MULTI_ARCH: "amd64 arm64"
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         with:

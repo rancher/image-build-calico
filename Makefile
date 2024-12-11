@@ -84,10 +84,23 @@ push-image: $(BUILDDIR) | buildx-machine
 
 .PHONY: manifest-push
 manifest-push: $(BUILDDIR) | buildx-machine
-	docker buildx imagetools create \
-		--builder=$(MACHINE) \
-		-t $(IMAGE) -t $(REGISTRY_IMAGE):latest \
-		$$(jq -r '.["containerimage.digest"]' $(METADATA_FILE))
+	if [ -n "$(MULTI_ARCH)" ]; then \
+		d=""; \
+		for a in $(MULTI_ARCH); do \
+			f=$(BUILDDIR)/$(subst /,-,$(REGISTRY_IMAGE))-$$a.metadata.json; \
+			echo $$f; \
+			d+="$$(jq -r '.["containerimage.digest"]' $$f) "; \
+		done; \
+		docker buildx imagetools create \
+			--builder=$(MACHINE) \
+			-t $(IMAGE) -t $(REGISTRY_IMAGE):latest \
+			$$d; \
+	else \
+		docker buildx imagetools create \
+			--builder=$(MACHINE) \
+			-t $(IMAGE) -t $(REGISTRY_IMAGE):latest \
+			$$(jq -r '.["containerimage.digest"]' $(METADATA_FILE)); \
+	fi
 
 ifneq ($(strip $(IID_FILE_PATH)),)
 	docker buildx imagetools inspect --format "{{json .Manifest}}" $(IMAGE) | jq -r '.digest' > "$(IID_FILE_PATH)"
