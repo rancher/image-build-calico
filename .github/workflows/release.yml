@@ -11,8 +11,6 @@ jobs:
       contents: read
       id-token: write
     runs-on: runs-on,runner=4cpu-linux-x64,run-id=${{ github.run_id }}
-    outputs:
-      digest: ${{ steps.digest.outputs.digest }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -20,6 +18,7 @@ jobs:
     - name: Set the ENV values
       id: get-Envs
       run: |
+        echo "$(make -s log | grep BUILDDIR)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
@@ -59,19 +58,20 @@ jobs:
         prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
-    - name: Digest
-      id: digest
-      run: |
-        IMAGE_DIGEST=$(jq -r '.["containerimage.digest"]' /tmp/metadata.json)
-        echo "digest=$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
+    - name: Upload metadata files
+      uses: actions/upload-artifact@v4
+      with:
+        name: metadata-files
+        path: ${{ env.BUILDDIR}}
+        if-no-files-found: error
+        retention-days: 1
+
 
   build-arm64-digest:
     permissions:
       contents: read
       id-token: write
     runs-on: runs-on,runner=4cpu-linux-arm64,run-id=${{ github.run_id }}
-    outputs:
-      digest: ${{ steps.digest.outputs.digest }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -79,6 +79,7 @@ jobs:
     - name: Set the ENV values
       id: get-Envs
       run: |
+        echo "$(make -s log | grep BUILDDIR)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep ARCH)" >> "$GITHUB_ENV"
         echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
@@ -118,11 +119,13 @@ jobs:
         prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
-    - name: Digest
-      id: digest
-      run: |
-        IMAGE_DIGEST=$(jq -r '.["containerimage.digest"]' /tmp/metadata.json)
-        echo "digest=$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
+    - name: Upload metadata files
+      uses: actions/upload-artifact@v4
+      with:
+        name: metadata-files
+        path: ${{ env.BUILDDIR}}
+        if-no-files-found: error
+        retention-days: 1
 
   merge:
     permissions:
@@ -139,7 +142,14 @@ jobs:
       - name: Set the ENV values
         id: get-Envs
         run: |
+          echo "$(make -s log | grep BUILDDIR)" >> "$GITHUB_ENV"
           echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
+
+      - name: Download metadata dir
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.BUILDDIR }}
+          merge-multiple: true
 
       - name: Docker meta
         id: meta
@@ -163,7 +173,6 @@ jobs:
         env: 
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
-          IMAGE_DIGESTS: ${{ needs.build-amd64-digest.outputs.digest }} ${{ needs.build-arm64-digest.outputs.digest }}
         with:
           make-target: manifest-push
           image: hardened-calico
