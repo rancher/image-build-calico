@@ -5,9 +5,9 @@ ARG CNI_IMAGE_VERSION=v1.6.1-build20241203
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
 ARG GOEXPERIMENT=boringcrypto
 
-FROM ${BCI_IMAGE} as bci
-FROM ${CNI_IMAGE} as cni
-FROM ${GO_IMAGE} as builder
+FROM ${BCI_IMAGE} AS bci
+FROM ${CNI_IMAGE} AS cni
+FROM ${GO_IMAGE} AS builder
 # setup required packages
 ARG TAG=v3.29.1
 RUN set -x && \
@@ -202,7 +202,7 @@ COPY --from=cni	/opt/cni/                            /opt/cni/
 COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
 COPY --from=runit /opt/local/command/                /usr/sbin/
 
-FROM calico_rootfs_overlay_${ARCH} as calico_rootfs_overlay
+FROM calico_rootfs_overlay_${ARCH} AS calico_rootfs_overlay
 
 FROM bci
 RUN zypper update -y && \
