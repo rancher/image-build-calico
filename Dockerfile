@@ -46,10 +46,11 @@ ARG ARCH
 ARG TAG=v3.29.1
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/calicoctl
-RUN GO_LDFLAGS="-linkmode=external \
+RUN GIT_COMMIT=$(git rev-parse --short HEAD) \
+    GO_LDFLAGS="-linkmode=external \
+    -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.GitCommit=${GIT_COMMIT} \
     -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.VERSION=${TAG} \
-    -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.GIT_REVISION=$(git rev-parse --short HEAD) \
-    " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calicoctl ./calicoctl/calicoctl.go
+    " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calicoctl ./calicoctl/
 RUN go-assert-static.sh bin/*
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN install -s bin/* /usr/local/bin
