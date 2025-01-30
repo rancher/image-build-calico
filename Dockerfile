@@ -9,6 +9,7 @@ FROM ${BCI_IMAGE} AS bci
 FROM ${CNI_IMAGE} AS cni
 FROM ${GO_IMAGE} AS builder
 # setup required packages
+ARG SRC=github.com/rancher/release-calico
 ARG TAG=v3.29.1
 RUN set -x && \
     apk --no-cache add \
@@ -25,7 +26,7 @@ RUN set -x && \
     libelf-static \
     zstd-static \
     zlib-static
-RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/github.com/projectcalico/calico
+RUN git clone --depth=1 https://${SRC}.git $GOPATH/src/github.com/projectcalico/calico
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
