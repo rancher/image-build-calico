@@ -2,19 +2,21 @@
 name: "Update cniplugins version" 
 
 sources:
- cniplugins:
-   name: Get cniplugins version
-   kind: githubrelease
-   spec:
-     owner: rancher
-     repository: image-build-cni-plugins
-     token: '{{ requiredEnv .github.token }}'
-     typefilter:
-       release: true
-       draft: false
-       prerelease: false
-     versionfilter:
-       kind: semver
+  cniplugins:
+    name: Get cniplugins version
+    kind: githubrelease
+    spec:
+      owner: rancher
+      repository: image-build-cni-plugins
+      token: '{{ requiredEnv .github.token }}'
+      typefilter:
+        release: true
+        draft: false
+        prerelease: false
+      versionfilter:
+        kind: regex
+        # pattern accepts any semver constraint
+        pattern: "v[0-9]+.[0-9]+.[0-9]+-build[0-9]+"
 
 targets:
   dockerfile:
