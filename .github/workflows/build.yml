@@ -33,7 +33,7 @@ jobs:
 
     - name: "Generate GH App Token"
       id: app-token
-      uses: rancher/ecm-distro-tools/actions/create-github-app-token@84073198015702cc0419207d49a75d799d4f41a4
+      uses: rancher/ecm-distro-tools/actions/create-github-app-token@5a9958e912692fc7d3681fd665db20ed66822468
       with:
         app-id: ${{ env.APP_ID }}
         private-key: ${{ env.PRIVATE_KEY }}
@@ -93,7 +93,7 @@ jobs:
 
     - name: "Generate GH App Token"
       id: app-token
-      uses: rancher/ecm-distro-tools/actions/create-github-app-token@84073198015702cc0419207d49a75d799d4f41a4
+      uses: rancher/ecm-distro-tools/actions/create-github-app-token@5a9958e912692fc7d3681fd665db20ed66822468
       with:
         app-id: ${{ env.APP_ID }}
         private-key: ${{ env.PRIVATE_KEY }}
