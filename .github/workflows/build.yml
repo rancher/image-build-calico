@@ -33,11 +33,11 @@ jobs:
 
     - name: "Generate GH App Token"
       id: app-token
-      uses: rancher/ecm-distro-tools/actions/create-github-app-token@5a9958e912692fc7d3681fd665db20ed66822468
+      uses: actions/create-github-app-token@v1
       with:
         app-id: ${{ env.APP_ID }}
         private-key: ${{ env.PRIVATE_KEY }}
-        installation-id: 60236498
+        repositories: release-calico
 
     - name: Build container image
       uses: docker/build-push-action@v6
@@ -93,11 +93,11 @@ jobs:
 
     - name: "Generate GH App Token"
       id: app-token
-      uses: rancher/ecm-distro-tools/actions/create-github-app-token@5a9958e912692fc7d3681fd665db20ed66822468
+      uses: actions/create-github-app-token@v1
       with:
         app-id: ${{ env.APP_ID }}
         private-key: ${{ env.PRIVATE_KEY }}
-        installation-id: 60236498
+        repositories: release-calico
 
     - name: Build container image
       uses: docker/build-push-action@v6
