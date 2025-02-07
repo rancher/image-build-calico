@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   security-events: write # upload Sarif results
+  id-token: write
 
 name: Build
 jobs:
@@ -21,6 +22,23 @@ jobs:
       id: get-TAG
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+
+    - name: "Read secrets"
+      id: read-secrets
+      uses: rancher-eio/read-vault-secrets@main
+      with:
+        secrets: |
+          secret/data/github/repo/${{ github.repository }}/github/release-app-credentials appId | APP_ID ;
+          secret/data/github/repo/${{ github.repository }}/github/release-app-credentials privateKey | PRIVATE_KEY
+
+    - name: "Generate GH App Token"
+      id: app-token
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ env.APP_ID }}
+        private-key: ${{ env.PRIVATE_KEY }}
+        repositories: release-calico
+
     - name: Build container image
       uses: docker/build-push-action@v6
       with:
@@ -28,6 +46,9 @@ jobs:
         push: false
         tags: rancher/hardened-calico:${{ env.TAG }}-amd64
         file: Dockerfile
+        build-args: |
+          SRC=x-access-token:${{ steps.app-token.outputs.token }}@github.com/rancher/release-calico
+
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@0.29.0
@@ -61,6 +82,23 @@ jobs:
       id: get-TAG
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+
+    - name: "Read secrets"
+      id: read-secrets
+      uses: rancher-eio/read-vault-secrets@main
+      with:
+        secrets: |
+          secret/data/github/repo/${{ github.repository }}/github/release-app-credentials appId | APP_ID ;
+          secret/data/github/repo/${{ github.repository }}/github/release-app-credentials privateKey | PRIVATE_KEY
+
+    - name: "Generate GH App Token"
+      id: app-token
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ env.APP_ID }}
+        private-key: ${{ env.PRIVATE_KEY }}
+        repositories: release-calico
+
     - name: Build container image
       uses: docker/build-push-action@v6
       with:
@@ -70,3 +108,5 @@ jobs:
         file: Dockerfile
         outputs: type=docker
         platforms: linux/arm64
+        build-args: |
+          SRC=x-access-token:${{ steps.app-token.outputs.token }}@github.com/rancher/release-calico
