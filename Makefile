@@ -29,6 +29,7 @@ K3S_ROOT_VERSION ?= v0.14.1
 BUILD_META=-build$(shell date +%Y%m%d)
 MACHINE := rancher
 TAG ?= ${GITHUB_ACTION_TAG}
+SRC ?= github.com/rancher/release-calico
 
 ifeq ($(TAG),)
 TAG := v3.29.1$(BUILD_META)
@@ -61,6 +62,7 @@ image-build:
 		--pull \
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
+		--build-arg SRC=$(SRC) \
 		--tag $(IMAGE) \
 		--tag $(IMAGE)-$(ARCH) \
 		--load \
@@ -76,6 +78,7 @@ push-image: $(BUILDDIR) | buildx-machine
 		--platform=$(TARGET_PLATFORMS) \
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
+		--build-arg SRC=$(SRC) \
 		--output type=image,name=$(REGISTRY_IMAGE),push-by-digest=true,name-canonical=true,push=true \
 		$(LABEL_ARGS) \
 		--push \
