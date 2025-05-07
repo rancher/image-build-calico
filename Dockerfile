@@ -29,6 +29,10 @@ RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
+RUN git clone https://github.com/libbpf/libbpf.git $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
+RUN git fetch --all --tags --prune
+RUN latest=$(git tag | tail -1) && git checkout $latest
 
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
@@ -86,10 +90,10 @@ ARG TAG=v3.30.0
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/node
 RUN go mod download
-ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/include/libbpf/src -lbpf -lelf -lz -lzstd"
-ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/include/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl"
+ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -lbpf -lelf -lz -lzstd"
+ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl"
 ENV CGO_ENABLED=1
-RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C ../felix/bpf-gpl/include/libbpf/src BUILD_STATIC_ONLY=1; fi
+RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C ../felix/bpf-gpl/libbpf/src BUILD_STATIC_ONLY=1; fi
 RUN if [ "${ARCH}" = "amd64" ]; then \
     go build -ldflags "-linkmode=external -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
