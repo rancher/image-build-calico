@@ -54,7 +54,7 @@ RUN GIT_COMMIT=$(git rev-parse --short HEAD) \
     GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.GitCommit=${GIT_COMMIT} \
     -X github.com/projectcalico/calico/calicoctl/calicoctl/commands.VERSION=${TAG} \
-    " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calicoctl ./calicoctl/
+    " go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/calicoctl ./calicoctl/
 RUN go-assert-static.sh bin/*
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN install -s bin/* /usr/local/bin
@@ -72,9 +72,9 @@ COPY dualStack-changes.patch .
 # Apply the patch only in versions v3.20 and v3.21. It is already part of v3.22
 RUN if [[ "${TAG}" =~ "v3.20" || "${TAG}" =~ "v3.21" ]]; then patch -p1 < dualStack-changes.patch; fi
 ENV GO_LDFLAGS="-linkmode=external -X main.VERSION=${TAG}"
-RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/calico
-RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
-RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/install ./cmd/install
+RUN go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/calico ./cmd/calico
+RUN go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/calico-ipam ./cmd/calico
+RUN go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/install ./cmd/install
 RUN go-assert-static.sh bin/*
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/*; fi
 RUN mkdir -vp /opt/cni/bin
@@ -99,7 +99,7 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) -extldflags \"-static\"" \
-    -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
+    -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN if [ "${ARCH}" != "amd64" ]; then \  
     CGO_LDFLAGS="-lelf -lz -lzstd" && CGO_CFLAGS="" && go build -ldflags "-linkmode=external \
@@ -107,7 +107,7 @@ RUN if [ "${ARCH}" != "amd64" ]; then \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
     -X github.com/projectcalico/calico/node/buildinfo.BuildDate=$(date -u +%FT%T%z) -extldflags \"-static\"" \
-    -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
+    -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN go-assert-static.sh bin/calico-node
 RUN if [ "${ARCH}" = "amd64" ]; then go-assert-boring.sh bin/calico-node; fi
@@ -120,7 +120,7 @@ FROM builder AS calico_pod2daemon
 ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/pod2daemon
 ENV GO_LDFLAGS="-linkmode=external"
-RUN go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/flexvoldriver ./flexvol
+RUN go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/flexvoldriver ./flexvol
 RUN go-assert-static.sh bin/*
 RUN install -m 0755 flexvol/docker-image/flexvol.sh /usr/local/bin/
 RUN install -D -s bin/flexvoldriver /usr/local/bin/flexvol/flexvoldriver
@@ -133,10 +133,10 @@ ARG GOEXPERIMENT
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/kube-controllers
 RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/kube-controllers/main.VERSION=${TAG}" \
-    go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/kube-controllers ./cmd/kube-controllers/
+    go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/kube-controllers ./cmd/kube-controllers/
 RUN GO_LDFLAGS="-linkmode=external \
     -X github.com/projectcalico/calico/kube-controllers/main.VERSION=${TAG}" \
-    go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o bin/check-status ./cmd/check-status/
+    go-build-static.sh -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/check-status ./cmd/check-status/
 RUN go-assert-static.sh bin/*
 RUN install -D -s bin/kube-controllers /usr/local/bin/
 RUN install -D -s bin/check-status /usr/local/bin/
