@@ -1,0 +1,16 @@
+## RPM packages required by the calico binaries
+conntrack-tools
+hostname
+iproute2
+ipset
+iputils
+kmod
+libmnl0
+libnetfilter_conntrack3
+libnetfilter_cthelper0
+libnetfilter_cttimeout1
+libnetfilter_queue1
+libpcap1
+net-tools
+procps
+which
