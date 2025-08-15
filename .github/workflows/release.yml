@@ -146,7 +146,7 @@ jobs:
           echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
 
       - name: Download metadata dir
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: ${{ env.BUILDDIR }}
           merge-multiple: true
