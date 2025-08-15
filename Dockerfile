@@ -208,27 +208,37 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM calico_rootfs_overlay_${ARCH} AS calico_rootfs_overlay
 
-FROM bci
-RUN zypper update -y && \
-    zypper install -y  \
-    hostname \
-    libpcap1 \
-    libmnl0 \
-    libnetfilter_conntrack3 \
-    libnetfilter_cthelper0 \
-    libnetfilter_cttimeout1   \
-    libnetfilter_queue1 \
-    ipset \
-    kmod \
-    iputils \
-    iproute2 \
-    procps \
-    net-tools \
-    conntrack-tools \
-    which  && \
-    rm -rf /var/cache/zypp/packages
+# Build the final container image
+FROM bci AS container_image
+
+# Install required packages
+COPY packages.txt /tmp/
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper install -y
+RUN zypper update -y
+
+# Copy the calico binaries
 COPY --from=calico_rootfs_overlay / /
 ENV PATH=$PATH:/opt/cni/bin
 RUN set -x && \
     test -e /opt/cni/bin/install && \
     ln -vs /opt/cni/bin/install /install-cni
+
+# Trim unnessary packages from the container image
+RUN zypper -n clean -a
+RUN zypper rm -y \
+    boost-license1_66_0 \
+    libcurl4 \
+    libglib-2_0-0 \
+    libssh-config \
+    libssh4 \
+    libyaml-cpp0_6 \
+    libzypp \
+    openssl \
+    pam
+RUN rpm -e libxml2-2 libaugeas0 libsolv-tools-base
+
+# Verify required packages
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm --verify
+
+# Clean-up
+RUN rm /tmp/packages.txt
