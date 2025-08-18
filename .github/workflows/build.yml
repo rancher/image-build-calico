@@ -15,7 +15,7 @@ jobs:
       labels: runs-on,runner=4cpu-linux-x64,run-id=${{ github.run_id }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set the TAG value
       id: get-TAG
@@ -49,7 +49,7 @@ jobs:
       labels: runs-on,runner=4cpu-linux-arm64,run-id=${{ github.run_id }}
     steps:
     - name: Check out code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
