@@ -225,6 +225,8 @@ RUN set -x && \
 
 # Trim unnessary packages from the container image
 RUN zypper -n clean -a
+# Lock required packages to ensure they're not removed accidentally
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
 RUN zypper rm -y \
     boost-license1_66_0 \
     libcurl4 \
@@ -233,12 +235,8 @@ RUN zypper rm -y \
     libssh4 \
     libyaml-cpp0_6 \
     libzypp \
-    openssl \
-    pam
+    openssl 
 RUN rpm -e libxml2-2 libaugeas0 libsolv-tools-base
-
-# Verify required packages
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm --verify
 
 # Clean-up
 RUN rm /tmp/packages.txt
