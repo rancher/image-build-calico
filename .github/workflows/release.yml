@@ -3,7 +3,7 @@ on:
     types: [published]
 
 env:
-  GITHUB_ACTION_TAG: ${{ github.ref_name }}  
+  GITHUB_ACTION_TAG: ${{ github.event.release.tag_name }}  
 
 jobs:
   build-amd64-digest:
