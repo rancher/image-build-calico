@@ -223,20 +223,25 @@ RUN set -x && \
     test -e /opt/cni/bin/install && \
     ln -vs /opt/cni/bin/install /install-cni
 
-# Trim unnessary packages from the container image
-RUN zypper -n clean -a
 # Lock required packages to ensure they're not removed accidentally
 RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
-RUN zypper rm -y \
-    boost-license1_66_0 \
+
+# Trim unnessary packages from the container image
+RUN zypper -n clean -a
+RUN zypper addlock libsolv-tools-base libxml2-2
+RUN zypper rm --clean-deps --no-confirm \
+    cpio \
+    gpg2 \
     libcurl4 \
-    libglib-2_0-0 \
-    libssh-config \
+    libsqlite3-0 \
     libssh4 \
-    libyaml-cpp0_6 \
     libzypp \
-    openssl 
-RUN rpm -e libxml2-2 libaugeas0 libsolv-tools-base
+    openssl \
+    tar
+RUN rpm -e libsolv-tools-base libxml2-2
+
+# Verify required packages
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm --verify
 
 # Clean-up
 RUN rm /tmp/packages.txt
