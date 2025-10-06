@@ -38,8 +38,11 @@ RUN latest=$(git tag | tail -1) && git checkout $latest
 FROM builder AS k3s_xtables
 ARG ARCH
 ARG K3S_ROOT_VERSION=v0.15.0
-ADD https://github.com/rancher/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-xtables-${ARCH}.tar /opt/xtables/k3s-root-xtables.tar
-RUN tar xvf /opt/xtables/k3s-root-xtables.tar -C /opt/xtables
+# Get xtables files from k3s-root
+RUN mkdir -p /opt/xtables/
+ADD https://github.com/k3s-io/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-${ARCH}.tar /opt/k3s-root/k3s-root.tar
+# exclude 'mount' and 'modprobe' when unpacking the archive
+RUN tar xvf /opt/k3s-root/k3s-root.tar -C /opt/xtables --strip-components=3 --exclude=./bin/aux/mo* './bin/aux/'
 ### END K3S XTABLES #####
 
 FROM calico/bird:v0.3.3-184-g202a2186-${ARCH} AS calico_bird
@@ -174,7 +177,7 @@ COPY --from=calico_pod2daemon /usr/local/bin/        /usr/local/bin/
 COPY --from=calico_kubecontrollers /usr/local/bin/   /usr/bin/
 COPY --from=calico_cni /opt/cni/                     /opt/cni/
 COPY --from=cni	/opt/cni/                            /opt/cni/
-COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
+COPY --from=k3s_xtables /opt/xtables/                /usr/sbin/
 COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM scratch AS calico_rootfs_overlay_arm64
@@ -189,7 +192,7 @@ COPY --from=calico_pod2daemon /usr/local/bin/        /usr/local/bin/
 COPY --from=calico_kubecontrollers /usr/local/bin/   /usr/bin/
 COPY --from=calico_cni /opt/cni/                     /opt/cni/
 COPY --from=cni	/opt/cni/                            /opt/cni/
-COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
+COPY --from=k3s_xtables /opt/xtables/                /usr/sbin/
 COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM scratch AS calico_rootfs_overlay_s390x
@@ -203,7 +206,7 @@ COPY --from=calico_pod2daemon /usr/local/bin/        /usr/local/bin/
 COPY --from=calico_kubecontrollers /usr/local/bin/   /usr/bin/
 COPY --from=calico_cni /opt/cni/                     /opt/cni/
 COPY --from=cni	/opt/cni/                            /opt/cni/
-COPY --from=k3s_xtables /opt/xtables/bin/            /usr/sbin/
+COPY --from=k3s_xtables /opt/xtables/                /usr/sbin/
 COPY --from=runit /opt/local/command/                /usr/sbin/
 
 FROM calico_rootfs_overlay_${ARCH} AS calico_rootfs_overlay
