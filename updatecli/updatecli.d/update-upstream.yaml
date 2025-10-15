@@ -1,0 +1,58 @@
+---
+name: Update upstream version
+sources:
+  tag:
+    name: Get upstream release
+    kind: githubrelease
+    spec:
+      owner: '{{ .scm.upstream.owner }}'
+      repository: '{{ .scm.upstream.repository }}'
+      token: '{{ requiredEnv .github.token }}'
+      typefilter:
+        release: true
+        draft: false
+        prerelease: false
+      versionfilter:
+        kind: semver
+targets:
+  dockerfile:
+    name: 'Bump Dockerfile to upstream version {{ source "tag" }}'
+    kind: dockerfile
+    scmid: default
+    sourceid: tag
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: TAG
+  makefile:
+    name: 'Bump Makefile to upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Makefile
+      matchpattern: '(?m)^TAG \:\= (.*)'
+      replacepattern: 'TAG := {{ source "tag" }}$$(BUILD_META)'
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ .scm.default.owner }}'
+      repository: '{{ .scm.default.repository }}'
+      branch: '{{ .scm.default.branch }}'
+actions:
+  default:
+    title: 'Bump to upstream version {{ source "tag" }}'
+    kind: github/pullrequest
+    spec:
+      automerge: false
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+    scmid: default
