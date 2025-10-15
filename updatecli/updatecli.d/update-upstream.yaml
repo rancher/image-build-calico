@@ -1,0 +1,96 @@
+---
+name: Update upstream version
+sources:
+  tag:
+    name: Get upstream release
+    kind: githubrelease
+    spec:
+      owner: '{{ .scm.upstream.owner }}'
+      repository: '{{ .scm.upstream.repository }}'
+      token: '{{ requiredEnv .github.token }}'
+      typefilter:
+        release: true
+        draft: false
+        prerelease: false
+      versionfilter:
+        kind: semver
+  gomod:
+    name: Get golang version
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/go.mod'
+      matchpattern: 'go ([0-9]+\.[0-9]+)'
+    transformers:
+      - trimprefix: 'go '
+  buildbase:
+    name: Get build base version
+    kind: githubrelease
+    dependson:
+      - gomod
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      owner: '{{ .scm.buildbase.owner }}'
+      repository: '{{ .scm.buildbase.repository }}'
+      typefilter:
+        release: true
+        draft: false
+        prerelease: false
+      versionfilter:
+        kind: regex
+        pattern: '{{ source "gomod"}}\.\S+'
+targets:
+  dockerfile:
+    name: 'Bump Dockerfile to upstream version {{ source "tag" }}'
+    kind: dockerfile
+    scmid: default
+    sourceid: tag
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: TAG
+  makefile:
+    name: 'Bump Makefile to upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Makefile
+      matchpattern: '(?m)^TAG \:\= (.*)'
+      replacepattern: 'TAG := {{ source "tag" }}$$(BUILD_META)'
+  buildbase:
+    name: 'Bump to build base version {{ source "buildbase" }}'
+    kind: dockerfile
+    scmid: default
+    sourceid: buildbase
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: GO_IMAGE
+    transformers:
+      - addprefix: 'rancher/hardened-build-base:'
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ .scm.default.owner }}'
+      repository: '{{ .scm.default.repository }}'
+      branch: '{{ .scm.default.branch }}'
+actions:
+  default:
+    title: 'Bump to upstream version {{ source "tag" }}'
+    kind: github/pullrequest
+    spec:
+      automerge: false
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+    scmid: default

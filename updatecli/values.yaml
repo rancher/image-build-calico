@@ -3,6 +3,15 @@ github:
   email: "41898282+github-actions[bot]@users.noreply.github.com"
   username: "UPDATECLI_GITHUB_ACTOR"
   token: "UPDATECLI_GITHUB_TOKEN"
-  repository: "image-build-calico"
-  branch: "master"
-  owner: "rancher"
+scm:
+  default:
+    owner: rancher
+    repository: image-build-calico
+    branch: master
+  upstream:
+    owner: projectcalico
+    repository: calico
+    branch: master
+  buildbase:
+    owner: rancher
+    repository: image-build-base
