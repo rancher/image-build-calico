@@ -12,3 +12,6 @@ scm:
     owner: projectcalico
     repository: calico
     branch: master
+  buildbase:
+    owner: rancher
+    repository: image-build-base
