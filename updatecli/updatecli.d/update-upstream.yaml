@@ -24,22 +24,6 @@ sources:
       matchpattern: 'go ([0-9]+\.[0-9]+)'
     transformers:
       - trimprefix: 'go '
-  buildbase:
-    name: Get build base version
-    kind: githubrelease
-    dependson:
-      - gomod
-    spec:
-      token: '{{ requiredEnv .github.token }}'
-      owner: '{{ .scm.buildbase.owner }}'
-      repository: '{{ .scm.buildbase.repository }}'
-      typefilter:
-        release: true
-        draft: false
-        prerelease: false
-      versionfilter:
-        kind: regex
-        pattern: '{{ source "gomod"}}\.\S+'
 targets:
   dockerfile:
     name: 'Bump Dockerfile to upstream version {{ source "tag" }}'
@@ -60,18 +44,6 @@ targets:
       file: Makefile
       matchpattern: '(?m)^TAG \:\= (.*)'
       replacepattern: 'TAG := {{ source "tag" }}$$(BUILD_META)'
-  buildbase:
-    name: 'Bump to build base version {{ source "buildbase" }}'
-    kind: dockerfile
-    scmid: default
-    sourceid: buildbase
-    spec:
-      file: Dockerfile
-      instruction:
-        keyword: ARG
-        matcher: GO_IMAGE
-    transformers:
-      - addprefix: 'rancher/hardened-build-base:'
 scms:
   default:
     kind: github
