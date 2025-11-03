@@ -96,7 +96,7 @@ RUN go mod download
 ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -lbpf -lelf -lz -lzstd"
 ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix//bpf-gpl/libbpf/src -I/go/src/github.com/projectcalico/calico/felix//bpf-gpl"
 ENV CGO_ENABLED=1
-RUN if [ "${ARCH}" = "amd64" ]; then make -j 16 -C ../felix/bpf-gpl/libbpf/src BUILD_STATIC_ONLY=1; fi
+RUN make -j 16 -C ../felix/bpf-gpl/libbpf/src BUILD_STATIC_ONLY=1
 RUN if [ "${ARCH}" = "amd64" ]; then \
     go build -ldflags "-linkmode=external -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
@@ -105,7 +105,7 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
     -buildvcs=false -gcflags=-trimpath=${GOPATH}/src -o bin/calico-node ./cmd/calico-node; \
     fi
 RUN if [ "${ARCH}" != "amd64" ]; then \  
-    CGO_LDFLAGS="-lelf -lz -lzstd" && CGO_CFLAGS="" && go build -ldflags "-linkmode=external \
+    go build -ldflags "-linkmode=external \
     -X github.com/projectcalico/calico/node/pkg/lifecycle/startup.VERSION=${TAG} \
     -X github.com/projectcalico/calico/node/buildinfo.GitRevision=$(git rev-parse HEAD) \
     -X github.com/projectcalico/calico/node/buildinfo.GitVersion=$(git describe --tags --always) \
