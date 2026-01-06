@@ -1,7 +1,7 @@
 ARG ARCH=${TARGETARCH}
 ARG BCI_IMAGE=registry.suse.com/bci/bci-base
 ARG GO_IMAGE=rancher/hardened-build-base:v1.24.11b2
-ARG CNI_IMAGE_VERSION=v1.9.0-build20251215
+ARG CNI_IMAGE_VERSION=v1.9.0-build20260106
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
 ARG GOEXPERIMENT=boringcrypto
 
