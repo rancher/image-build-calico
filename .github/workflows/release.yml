@@ -43,7 +43,7 @@ jobs:
           secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
 
     - name: Build and push container image - Staging
-      id: build-amd64
+      id: build-amd64-staging
       uses: rancher/ecm-distro-tools/actions/publish-image@master
       env: 
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
@@ -123,7 +123,7 @@ jobs:
           secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
 
     - name: Build and push container image - Staging
-      id: build-arm64
+      id: build-arm64-staging
       uses: rancher/ecm-distro-tools/actions/publish-image@master
       env: 
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
