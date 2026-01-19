@@ -209,7 +209,7 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
 
       - name: Create manifest list and push - Staging
-        id: push-manifest
+        id: push-manifest-staging
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         env: 
           MULTI_ARCH: "amd64 arm64"
