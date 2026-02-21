@@ -31,7 +31,7 @@ MACHINE := rancher
 TAG ?= ${GITHUB_ACTION_TAG}
 
 ifeq ($(TAG),)
-TAG := v3.31.3$(BUILD_META)
+TAG := v3.31.4$(BUILD_META)
 endif
 
 REPO ?= rancher
