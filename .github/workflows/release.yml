@@ -78,7 +78,7 @@ jobs:
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
     - name: Upload metadata files
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: metadata-amd64
         path: ${{ env.BUILDDIR}}
@@ -158,7 +158,7 @@ jobs:
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
     - name: Upload metadata files
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: metadata-arm64
         path: ${{ env.BUILDDIR}}
