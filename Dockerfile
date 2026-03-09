@@ -233,7 +233,6 @@ RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
 RUN zypper -n clean -a
 RUN zypper addlock libsolv-tools-base libxml2-2
 RUN zypper rm --clean-deps --no-confirm \
-    cpio \
     gpg2 \
     libcurl4 \
     libsqlite3-0 \
