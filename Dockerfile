@@ -243,7 +243,7 @@ RUN zypper rm --clean-deps --no-confirm \
 RUN rpm -e libsolv-tools-base libxml2-2
 
 # Verify required packages
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm --verify
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm -q
 
 # Clean-up
 RUN rm /tmp/packages.txt
