@@ -231,8 +231,7 @@ RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
 
 # Trim unnessary packages from the container image
 RUN zypper -n clean -a
-RUN zypper addlock libsolv-tools-base libxml2-2 libpcap1
-RUN zypper rm --clean-deps --no-confirm \
+RUN rpm -e --nodeps \
     cpio \
     gpg2 \
     libcurl4 \
@@ -240,11 +239,12 @@ RUN zypper rm --clean-deps --no-confirm \
     libssh4 \
     libzypp \
     openssl \
-    tar
-RUN rpm -e libsolv-tools-base libxml2-2
+    tar \
+    libsolv-tools-base \
+    libxml2-2
 
-# Verify required packages
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm --verify
+# Verify required packages are installed
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm -q
 
 # Clean-up
 RUN rm /tmp/packages.txt
