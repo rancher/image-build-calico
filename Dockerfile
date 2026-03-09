@@ -231,7 +231,7 @@ RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
 
 # Trim unnessary packages from the container image
 RUN zypper -n clean -a
-RUN zypper addlock libsolv-tools-base libxml2-2
+RUN zypper addlock libsolv-tools-base libxml2-2 libpcap1
 RUN zypper rm --clean-deps --no-confirm \
     cpio \
     gpg2 \
