@@ -29,10 +29,11 @@ RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
+RUN sed -n 's/^LIBBPF_VERSION=//p' metadata.mk > /tmp/libbpf_version
 RUN git clone https://github.com/libbpf/libbpf.git $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
 RUN git fetch --all --tags --prune
-RUN latest=$(git tag | tail -1) && git checkout $latest
+RUN LIBBPF_VERSION=$(cat /tmp/libbpf_version) && git checkout tags/${LIBBPF_VERSION} -b ${LIBBPF_VERSION}
 
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
