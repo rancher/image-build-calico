@@ -13,7 +13,7 @@ jobs:
     runs-on: runs-on,runner=4cpu-linux-x64,run-id=${{ github.run_id }}
     steps:
     - name: Check out code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Set the ENV values
       id: get-Envs
@@ -25,12 +25,12 @@ jobs:
 
     - name: Docker meta
       id: meta-amd64
-      uses: docker/metadata-action@v6
+      uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
       with:
         images: ${{ env.REGISTRY_IMAGE }}
 
     - name: "Read secrets"
-      uses: rancher-eio/read-vault-secrets@main
+      uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
       with:
         secrets: |
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
@@ -44,7 +44,7 @@ jobs:
 
     - name: Build and push container image - Staging
       id: build-amd64-staging
-      uses: rancher/ecm-distro-tools/actions/publish-image@master
+      uses: rancher/ecm-distro-tools/actions/publish-image@10ab39987d39be83da6a252c1c3b540e496e0287 # v0.66.0
       env: 
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
@@ -60,7 +60,7 @@ jobs:
 
     - name: Build and push container image
       id: build-amd64
-      uses: rancher/ecm-distro-tools/actions/publish-image@master
+      uses: rancher/ecm-distro-tools/actions/publish-image@10ab39987d39be83da6a252c1c3b540e496e0287 # v0.66.0
       env: 
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
@@ -78,7 +78,7 @@ jobs:
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
     - name: Upload metadata files
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
       with:
         name: metadata-amd64
         path: ${{ env.BUILDDIR}}
@@ -93,7 +93,7 @@ jobs:
     runs-on: runs-on,runner=4cpu-linux-arm64,run-id=${{ github.run_id }}
     steps:
     - name: Check out code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Set the ENV values
       id: get-Envs
@@ -105,12 +105,12 @@ jobs:
 
     - name: Docker meta
       id: meta-arm64
-      uses: docker/metadata-action@v6
+      uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
       with:
         images: ${{ env.REGISTRY_IMAGE }}
 
     - name: "Read secrets"
-      uses: rancher-eio/read-vault-secrets@main
+      uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
       with:
         secrets: |
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
@@ -124,7 +124,7 @@ jobs:
 
     - name: Build and push container image - Staging
       id: build-arm64-staging
-      uses: rancher/ecm-distro-tools/actions/publish-image@master
+      uses: rancher/ecm-distro-tools/actions/publish-image@10ab39987d39be83da6a252c1c3b540e496e0287 # v0.66.0
       env: 
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
@@ -140,7 +140,7 @@ jobs:
 
     - name: Build and push container image
       id: build-arm64
-      uses: rancher/ecm-distro-tools/actions/publish-image@master
+      uses: rancher/ecm-distro-tools/actions/publish-image@10ab39987d39be83da6a252c1c3b540e496e0287 # v0.66.0
       env: 
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
@@ -158,7 +158,7 @@ jobs:
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
     - name: Upload metadata files
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
       with:
         name: metadata-arm64
         path: ${{ env.BUILDDIR}}
@@ -175,7 +175,7 @@ jobs:
       - build-arm64-digest
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set the ENV values
         id: get-Envs
@@ -184,19 +184,19 @@ jobs:
           echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
 
       - name: Download metadata dir
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: ${{ env.BUILDDIR }}
           merge-multiple: true
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
         with:
           images: ${{ env.REGISTRY_IMAGE }}
       
       - name: "Read secrets"
-        uses: rancher-eio/read-vault-secrets@main
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
@@ -210,7 +210,7 @@ jobs:
 
       - name: Create manifest list and push - Staging
         id: push-manifest-staging
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@10ab39987d39be83da6a252c1c3b540e496e0287 # v0.66.0
         env: 
           MULTI_ARCH: "amd64 arm64"
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
@@ -228,7 +228,7 @@ jobs:
 
       - name: Create manifest list and push
         id: push-manifest
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@10ab39987d39be83da6a252c1c3b540e496e0287 # v0.66.0
         env: 
           MULTI_ARCH: "amd64 arm64"
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
