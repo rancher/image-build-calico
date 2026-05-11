@@ -28,7 +28,7 @@ jobs:
           private-key: ${{ env.PRIVATE_KEY }}
 
       - name: Sync Upstream Releases
-        uses: rancher/ecm-distro-tools/actions/sync-upstream-release@eb9f1b8024d407105b1f2d90e2ceca27a950f921 # v0.67.4
+        uses: rancher/ecm-distro-tools/actions/sync-upstream-release@da9f5b6e258c327660eeab3db97952b612f1cf9f # v0.69.3
         with:
           upstream-owner: 'projectcalico'
           upstream-repo: 'calico'
