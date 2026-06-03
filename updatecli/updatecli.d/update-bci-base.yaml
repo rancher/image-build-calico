@@ -1,13 +1,13 @@
 ---
-name: 'Update BCI base version'
+name: 'Update BCI base image digest'
 
 sources:
   digest:
     name: Get latest BCI base image digest
     kind: dockerdigest
     spec:
-      image: 'registry.suse.com/bci/bci-base'
-      tag: 'latest'
+      image: '{{ .image.bci.name }}'
+      tag: '{{ .image.bci.tag }}'
 
 conditions:
   image:
@@ -15,7 +15,7 @@ conditions:
     kind: dockerimage
     sourceid: digest
     spec:
-      image: registry.suse.com/bci/bci-base
+      image: '{{ .image.bci.name }}'
       architecture: amd64
       tag: '{{ source "digest" }}'
 
@@ -26,7 +26,7 @@ targets:
     scmid: default
     sourceid: digest
     transformers:
-      - addprefix: 'registry.suse.com/bci/bci-base:'
+      - addprefix: '{{ .image.bci.name }}:'
     spec:
       file: 'Dockerfile'
       instruction:
@@ -64,4 +64,88 @@ actions:
         # TODO: use strategy `auto` when automerge and rulesets are applied
         strategy: client
         after: 0s
+      mergemethod: squash
+
+---
+name: 'Update BCI base image tag'
+
+sources:
+  tag:
+    name: Get latest BCI base image tag
+    kind: dockerimage
+    spec:
+      image: '{{ .image.bci.name }}'
+      versionfilter:
+        kind: regex
+        pattern: '^\d+\.\d+$'
+  digest:
+    name: Get latest BCI base image digest
+    kind: dockerdigest
+    dependson:
+      - tag
+    spec:
+      image: '{{ .image.bci.name }}'
+      tag: '{{ source "tag" }}'
+
+conditions:
+  image:
+    name: Check BCI base image exists
+    kind: dockerimage
+    sourceid: digest
+    spec:
+      image: '{{ .image.bci.name }}'
+      architecture: amd64
+      tag: '{{ source "digest" }}'
+
+targets:
+  dockerfile:
+    name: 'Update BCI base image digest'
+    kind: dockerfile
+    scmid: default
+    sourceid: digest
+    transformers:
+      - addprefix: '{{ .image.bci.name }}:'
+    spec:
+      file: 'Dockerfile'
+      instruction:
+        keyword: 'ARG'
+        matcher: 'BCI_IMAGE'
+  updatecli:
+    name: 'Update BCI base image tag'
+    kind: yaml
+    scmid: default
+    sourceid: tag
+    spec:
+      file: 'updatecli/values.yaml'
+      key: '$.image.bci.tag'
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ requiredEnv "GITHUB_REPOSITORY_OWNER" }}'
+      repository: '{{ requiredEnv "UPDATECLI_GITHUB_REPO" }}'
+      branch: '{{ requiredEnv "UPDATECLI_GITHUB_BRANCH" }}'
+
+actions:
+  default:
+    title: 'Update BCI base image tag'
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      description:
+        <h3>Update BCI base image tag</h3>
+        <ul>
+          <li>{{ .image.bci.name }}:{{ source "tag" }}</li>
+        </ul>
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+      merge:
+        strategy: manual
       mergemethod: squash
