@@ -1,0 +1,63 @@
+---
+name: 'Update BCI base version'
+
+sources:
+  digest:
+    name: Get latest BCI base image digest
+    kind: dockerdigest
+    spec:
+      image: 'registry.suse.com/bci/bci-base'
+      tag: 'latest'
+
+conditions:
+  image:
+    name: Check BCI base image exists
+    kind: dockerimage
+    sourceid: digest
+    spec:
+      image: registry.suse.com/bci/bci-base
+      architecture: amd64
+      tag: '{{ source "digest" }}'
+
+targets:
+  dockerfile:
+    name: 'Update BCI base image digest'
+    kind: dockerfile
+    scmid: default
+    sourceid: digest
+    transformers:
+      - addprefix: 'registry.suse.com/bci/bci-base:'
+    spec:
+      file: 'Dockerfile'
+      instruction:
+        keyword: 'ARG'
+        matcher: 'BCI_IMAGE'
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ requiredEnv "GITHUB_REPOSITORY_OWNER" }}'
+      repository: '{{ requiredEnv "UPDATECLI_GITHUB_REPO" }}'
+      branch: '{{ requiredEnv "UPDATECLI_GITHUB_BRANCH" }}'
+
+actions:
+  default:
+    title: 'Update BCI base image digest'
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      automerge: false
+      description:
+        <h3>Update BCI base image digest</h3>
+        <ul>
+          <li>{{ source "digest" }}</li>
+        </ul>
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
