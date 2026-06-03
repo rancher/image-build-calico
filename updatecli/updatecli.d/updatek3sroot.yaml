@@ -53,11 +53,12 @@ actions:
     default:
         title: 'Bump K3s-root version to {{ source "k3sroot" }}'
         kind: github/pullrequest
+        scmid: default
         spec:
-            automerge: false
             labels:
                 - chore
                 - skip-changelog
                 - status/auto-created
-        scmid: default
-
+            merge:
+                strategy: manual
+            mergemethod: squash
