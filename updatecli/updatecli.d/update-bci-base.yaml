@@ -51,7 +51,6 @@ actions:
     kind: github/pullrequest
     scmid: default
     spec:
-      automerge: false
       description:
         <h3>Update BCI base image digest</h3>
         <ul>
@@ -61,3 +60,8 @@ actions:
         - chore
         - skip-changelog
         - status/auto-created
+      merge:
+        # TODO: use strategy `auto` when automerge and rulesets are applied
+        strategy: client
+        after: 0s
+      mergemethod: squash
