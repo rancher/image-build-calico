@@ -15,7 +15,6 @@ permissions:
 jobs:
   updatecli:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -55,3 +54,5 @@ jobs:
         env:
           UPDATECLI_GITHUB_ACTOR: ${{ github.actor }}
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATECLI_GITHUB_REPO: ${{ github.event.repository.name }}
+          UPDATECLI_GITHUB_BRANCH: ${{ github.ref_name }}
