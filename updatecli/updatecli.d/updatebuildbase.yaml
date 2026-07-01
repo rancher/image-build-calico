@@ -74,11 +74,13 @@ actions:
     default:
         title: 'Bump build base version to {{ source "latest_patch" }}'
         kind: github/pullrequest
+        scmid: default
         spec:
-            automerge: false
             labels:
                 - chore
                 - skip-changelog
                 - status/auto-created
-        scmid: default
+            merge:
+                strategy: manual
+            mergemethod: squash
 
