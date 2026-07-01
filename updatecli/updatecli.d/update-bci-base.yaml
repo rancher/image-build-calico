@@ -2,12 +2,32 @@
 name: 'Update BCI base image digest'
 
 sources:
+  current_digest:
+    name: Get current BCI base image digest from Dockerfile
+    kind: dockerfile
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: BCI_IMAGE
+
+  subtag:
+    name: Get latest BCI base image subtag for configured stream
+    kind: dockerimage
+    spec:
+      image: '{{ .image.bci.name }}'
+      versionfilter:
+        kind: regex
+        pattern: '^{{ .image.bci.tag }}-[0-9]+\.[0-9]+$'
+
   digest:
     name: Get latest BCI base image digest
     kind: dockerdigest
+    dependson:
+      - subtag
     spec:
       image: '{{ .image.bci.name }}'
-      tag: '{{ .image.bci.tag }}'
+      tag: '{{ source "subtag" }}'
 
 conditions:
   image:
@@ -18,6 +38,12 @@ conditions:
       image: '{{ .image.bci.name }}'
       architecture: amd64
       tag: '{{ source "digest" }}'
+  cve_gate:
+    name: Update only if current digest has CVEs and candidate has fewer CVEs
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: './updatecli/scripts/should-update-bci-digest.sh "{{ source "current_digest" }}" "{{ .image.bci.name }}:{{ source "digest" }}" "{{ source "subtag" }}"'
 
 targets:
   dockerfile:
@@ -54,6 +80,7 @@ actions:
       description:
         <h3>Update BCI base image digest</h3>
         <ul>
+          <li>{{ .image.bci.name }}:{{ source "subtag" }}</li>
           <li>{{ source "digest" }}</li>
         </ul>
       labels:
