@@ -29,6 +29,9 @@ jobs:
       - name: Install Updatecli
         uses: updatecli/updatecli-action@e71be7554f3f940bc439cf720b3e4e379823c562 # v3.2.0
 
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+
       - name: Delete leftover UpdateCLI branches
         run: |
           gh pr list \

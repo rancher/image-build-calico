@@ -1,5 +1,5 @@
 ARG ARCH=${TARGETARCH}
-ARG BCI_IMAGE=registry.suse.com/bci/bci-base
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:16.0-22.1@sha256:805467666d108312e881b9628f4665193ecf336170d383c8c4781efce42503dc
 ARG GO_IMAGE=rancher/hardened-build-base:v1.25.10b1
 ARG CNI_IMAGE_VERSION=v1.9.1-build20260511
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
