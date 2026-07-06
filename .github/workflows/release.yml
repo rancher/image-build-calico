@@ -44,7 +44,7 @@ jobs:
 
     - name: Build and push container image - Staging
       id: build-amd64-staging
-      uses: rancher/ecm-distro-tools/actions/publish-image@016551c414f82e64af8c4c18315ea3093d10be7c # v0.74.3
+      uses: rancher/ecm-distro-tools/actions/publish-image@49656efa72e90062a70fac1a85ad121f4873a6a0 # v0.74.4
       env: 
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
@@ -60,7 +60,7 @@ jobs:
 
     - name: Build and push container image
       id: build-amd64
-      uses: rancher/ecm-distro-tools/actions/publish-image@016551c414f82e64af8c4c18315ea3093d10be7c # v0.74.3
+      uses: rancher/ecm-distro-tools/actions/publish-image@49656efa72e90062a70fac1a85ad121f4873a6a0 # v0.74.4
       env: 
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
@@ -124,7 +124,7 @@ jobs:
 
     - name: Build and push container image - Staging
       id: build-arm64-staging
-      uses: rancher/ecm-distro-tools/actions/publish-image@016551c414f82e64af8c4c18315ea3093d10be7c # v0.74.3
+      uses: rancher/ecm-distro-tools/actions/publish-image@49656efa72e90062a70fac1a85ad121f4873a6a0 # v0.74.4
       env: 
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
@@ -140,7 +140,7 @@ jobs:
 
     - name: Build and push container image
       id: build-arm64
-      uses: rancher/ecm-distro-tools/actions/publish-image@016551c414f82e64af8c4c18315ea3093d10be7c # v0.74.3
+      uses: rancher/ecm-distro-tools/actions/publish-image@49656efa72e90062a70fac1a85ad121f4873a6a0 # v0.74.4
       env: 
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
@@ -210,7 +210,7 @@ jobs:
 
       - name: Create manifest list and push - Staging
         id: push-manifest-staging
-        uses: rancher/ecm-distro-tools/actions/publish-image@016551c414f82e64af8c4c18315ea3093d10be7c # v0.74.3
+        uses: rancher/ecm-distro-tools/actions/publish-image@49656efa72e90062a70fac1a85ad121f4873a6a0 # v0.74.4
         env: 
           MULTI_ARCH: "amd64 arm64"
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
@@ -228,7 +228,7 @@ jobs:
 
       - name: Create manifest list and push
         id: push-manifest
-        uses: rancher/ecm-distro-tools/actions/publish-image@016551c414f82e64af8c4c18315ea3093d10be7c # v0.74.3
+        uses: rancher/ecm-distro-tools/actions/publish-image@49656efa72e90062a70fac1a85ad121f4873a6a0 # v0.74.4
         env: 
           MULTI_ARCH: "amd64 arm64"
           DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
