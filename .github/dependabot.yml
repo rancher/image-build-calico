@@ -12,11 +12,21 @@ updates:
       - "rancher/k3s"
 
   # Maintain dependencies for GitHub Actions
+  # Grouped and ignores patch updates
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     labels:
       - "kind/dependabot"
+    groups:
+      action-deps:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
     reviewers:
       - "rancher/k3s"
+
