@@ -25,7 +25,7 @@ jobs:
 
     - name: Docker meta
       id: meta-amd64
-      uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+      uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
       with:
         images: ${{ env.REGISTRY_IMAGE }}
 
@@ -78,7 +78,7 @@ jobs:
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
     - name: Upload metadata files
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: metadata-amd64
         path: ${{ env.BUILDDIR}}
@@ -105,7 +105,7 @@ jobs:
 
     - name: Docker meta
       id: meta-arm64
-      uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+      uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
       with:
         images: ${{ env.REGISTRY_IMAGE }}
 
@@ -158,7 +158,7 @@ jobs:
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
     - name: Upload metadata files
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: metadata-arm64
         path: ${{ env.BUILDDIR}}
@@ -184,14 +184,14 @@ jobs:
           echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
 
       - name: Download metadata dir
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: ${{ env.BUILDDIR }}
           merge-multiple: true
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY_IMAGE }}
       
