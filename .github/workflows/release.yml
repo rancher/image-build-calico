@@ -54,6 +54,7 @@ jobs:
         push-to-public: false
 
         prime-repo: rancher
+        prime-make-target: push-prime-image
         prime-registry: ${{ env.STAGING_REGISTRY }}
         prime-username: ${{ env.STAGING_REGISTRY_USERNAME }}
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
@@ -73,6 +74,7 @@ jobs:
         public-password: ${{ env.DOCKER_PASSWORD }}
 
         prime-repo: rancher
+        prime-make-target: push-prime-image
         prime-registry: ${{ env.PRIME_REGISTRY }}
         prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
@@ -134,6 +136,7 @@ jobs:
         push-to-public: false
 
         prime-repo: rancher
+        prime-make-target: push-prime-image
         prime-registry: ${{ env.STAGING_REGISTRY }}
         prime-username: ${{ env.STAGING_REGISTRY_USERNAME }}
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
@@ -153,6 +156,7 @@ jobs:
         public-password: ${{ env.DOCKER_PASSWORD }}
 
         prime-repo: rancher
+        prime-make-target: push-prime-image
         prime-registry: ${{ env.PRIME_REGISTRY }}
         prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
@@ -222,6 +226,7 @@ jobs:
           push-to-public: false
 
           prime-repo: rancher
+          prime-make-target: push-prime-image
           prime-registry: ${{ env.STAGING_REGISTRY }}
           prime-username: ${{ env.STAGING_REGISTRY_USERNAME }}
           prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
@@ -243,6 +248,7 @@ jobs:
           public-password: ${{ env.DOCKER_PASSWORD }}
 
           prime-repo: rancher
+          prime-make-target: push-prime-image
           prime-registry: ${{ env.PRIME_REGISTRY }}
           prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
           prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
