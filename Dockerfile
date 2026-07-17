@@ -29,6 +29,8 @@ RUN git clone --depth=1 https://github.com/projectcalico/calico.git $GOPATH/src/
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
+COPY go-mod-overrides ./go-mod-overrides
+RUN go-mod-overrides.sh ./go-mod-overrides
 RUN sed -n 's/^LIBBPF_VERSION=//p' metadata.mk > /tmp/libbpf_version
 RUN git clone https://github.com/libbpf/libbpf.git $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
