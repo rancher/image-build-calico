@@ -1,11 +1,13 @@
 ARG ARCH=${TARGETARCH}
-ARG BCI_IMAGE=registry.suse.com/bci/bci-base
+ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:15.7
+ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:15.7
 ARG GO_IMAGE=rancher/hardened-build-base:v1.25.12b1
 ARG CNI_IMAGE_VERSION=v1.9.1-build20260717
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
 ARG GOEXPERIMENT=boringcrypto
 
-FROM ${BCI_IMAGE} AS bci
+FROM ${BCI_BUILD_IMAGE} AS bci
+FROM ${BCI_RUNTIME_IMAGE} AS runtime_rootfs
 FROM ${CNI_IMAGE} AS cni
 FROM ${GO_IMAGE} AS builder
 # setup required packages
@@ -150,7 +152,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
-FROM ${BCI_IMAGE} AS runit
+FROM bci AS runit
 ARG RUNIT_VER=2.1.2
 # Install build dependencies and security updates.
 # RUN yum install -y rpm-build yum-utils make && \
@@ -215,12 +217,18 @@ COPY --from=runit /opt/local/command/                /usr/sbin/
 FROM calico_rootfs_overlay_${ARCH} AS calico_rootfs_overlay
 
 # Build the final container image
-FROM bci AS container_image
+FROM bci AS runtime_packages
 
-# Install required packages
+# Install required packages into the minimal runtime filesystem.
+COPY --from=runtime_rootfs / /rootfs
+COPY --from=bci /etc/zypp/repos.d/ /rootfs/etc/zypp/repos.d/
 COPY packages.txt /tmp/
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper install -y
-RUN zypper update -y
+RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper --gpg-auto-import-keys --root /rootfs install -y
+RUN zypper --gpg-auto-import-keys --root /rootfs update -y && \
+    rm -rf /rootfs/etc/zypp /rootfs/var/cache/zypp
+
+FROM runtime_rootfs AS container_image
+COPY --from=runtime_packages /rootfs/ /
 
 # Copy the calico binaries
 COPY --from=calico_rootfs_overlay / /
@@ -229,23 +237,8 @@ RUN set -x && \
     test -e /opt/cni/bin/install && \
     ln -vs /opt/cni/bin/install /install-cni
 
-# Lock required packages to ensure they're not removed accidentally
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
-
-# Trim unnessary packages from the container image
-RUN zypper -n clean -a
-RUN zypper addlock libaugeas0 libsolv-tools-base libxml2-2
-RUN zypper rm --clean-deps --no-confirm \
-    gpg2 \
-    libcurl4 \
-    libsqlite3-0 \
-    libssh4 \
-    libzypp \
-    openssl \
-    tar
-RUN rpm -e libaugeas0 libsolv-tools-base libxml2-2
-
 # Verify required packages
+COPY packages.txt /tmp/
 RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm -q
 
 # Clean-up
