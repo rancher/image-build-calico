@@ -117,8 +117,6 @@ log:
 	@echo "REPO=$(REPO)"
 	@echo "REGISTRY_IMAGE=$(REGISTRY_IMAGE)"
 	@echo "METADATA_FILE=$(METADATA_FILE)"
-	@echo "PKG=$(PKG)"
-	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
 	@echo "UNAME_M=$(UNAME_M)"
 	@echo "META_LABELS=$(META_LABELS)"
