@@ -219,7 +219,7 @@ FROM bci AS container_image
 
 # Install required packages
 COPY packages.txt /tmp/
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper install -y
+RUN zypper install -y $(sed 's/#.*//' /tmp/packages.txt)
 RUN zypper update -y
 
 # Copy the calico binaries
@@ -230,7 +230,7 @@ RUN set -x && \
     ln -vs /opt/cni/bin/install /install-cni
 
 # Lock required packages to ensure they're not removed accidentally
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
+RUN zypper addlock $(sed 's/#.*//' /tmp/packages.txt)
 
 # Trim unnessary packages from the container image
 RUN zypper -n clean -a
@@ -246,7 +246,7 @@ RUN zypper rm --clean-deps --no-confirm \
 RUN rpm -e libaugeas0 libsolv-tools-base libxml2-2
 
 # Verify required packages
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm -q
+RUN rpm -q $(sed 's/#.*//' /tmp/packages.txt)
 
 # Clean-up
 RUN rm /tmp/packages.txt
