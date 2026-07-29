@@ -45,11 +45,12 @@ actions:
     default:
         title: 'Bump cniplugins version to {{ source "cniplugins" }}'
         kind: github/pullrequest
+        scmid: default
         spec:
-            automerge: false
             labels:
                 - chore
                 - skip-changelog
                 - status/auto-created
-        scmid: default
-
+            merge:
+                strategy: manual
+            mergemethod: squash
