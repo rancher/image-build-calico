@@ -151,7 +151,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
 FROM ${BCI_IMAGE} AS runit
-ARG RUNIT_VER=2.1.2
+ARG RUNIT_VER=2.3.1
 # Install build dependencies and security updates.
 # RUN yum install -y rpm-build yum-utils make && \
 #     yum install -y wget glibc-static gcc    && \
