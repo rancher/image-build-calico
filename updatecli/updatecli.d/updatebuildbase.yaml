@@ -84,7 +84,9 @@ actions:
     title: 'Bump build base version to {{ source "latest_patch" }}'
     kind: github/pullrequest
     spec:
-      automerge: false
+      merge:
+        strategy: manual
+      mergemethod: squash
       labels:
         - chore
         - skip-changelog

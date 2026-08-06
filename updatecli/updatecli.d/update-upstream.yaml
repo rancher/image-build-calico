@@ -60,7 +60,9 @@ actions:
     title: 'Bump to upstream version {{ source "tag" }}'
     kind: github/pullrequest
     spec:
-      automerge: false
+      merge:
+        strategy: manual
+      mergemethod: squash
       labels:
         - chore
         - skip-changelog
