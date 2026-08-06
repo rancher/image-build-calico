@@ -50,14 +50,15 @@ scms:
       branch: '{{ .scm.default.branch }}'
       
 actions:
-    default:
-        title: 'Bump K3s-root version to {{ source "k3sroot" }}'
-        kind: github/pullrequest
-        spec:
-            automerge: false
-            labels:
-                - chore
-                - skip-changelog
-                - status/auto-created
-        scmid: default
-
+  default:
+    title: 'Bump K3s-root version to {{ source "k3sroot" }}'
+    kind: github/pullrequest
+    spec:
+      merge:
+        strategy: manual
+      mergemethod: squash
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+    scmid: default
