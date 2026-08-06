@@ -1,5 +1,5 @@
 ARG ARCH=${TARGETARCH}
-ARG BCI_IMAGE=registry.suse.com/bci/bci-base
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:16.0
 ARG GO_IMAGE=rancher/hardened-build-base:v1.25.12b1
 ARG CNI_IMAGE_VERSION=v1.9.1-build20260717
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
@@ -151,7 +151,7 @@ RUN install -D -s bin/check-status /usr/local/bin/
 ### BEGIN RUNIT ###
 # We need to build runit because there aren't any rpms for it in CentOS or BCI repositories.
 FROM ${BCI_IMAGE} AS runit
-ARG RUNIT_VER=2.1.2
+ARG RUNIT_VER=2.3.1
 # Install build dependencies and security updates.
 # RUN yum install -y rpm-build yum-utils make && \
 #     yum install -y wget glibc-static gcc    && \
@@ -219,7 +219,7 @@ FROM bci AS container_image
 
 # Install required packages
 COPY packages.txt /tmp/
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper install -y
+RUN zypper install -y $(sed 's/#.*//' /tmp/packages.txt)
 RUN zypper update -y
 
 # Copy the calico binaries
@@ -230,7 +230,7 @@ RUN set -x && \
     ln -vs /opt/cni/bin/install /install-cni
 
 # Lock required packages to ensure they're not removed accidentally
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs zypper addlock
+RUN zypper addlock $(sed 's/#.*//' /tmp/packages.txt)
 
 # Trim unnessary packages from the container image
 RUN zypper -n clean -a
@@ -246,7 +246,7 @@ RUN zypper rm --clean-deps --no-confirm \
 RUN rpm -e libaugeas0 libsolv-tools-base libxml2-2
 
 # Verify required packages
-RUN cat /tmp/packages.txt | sed 's/#.*//' | xargs rpm -q
+RUN rpm -q $(sed 's/#.*//' /tmp/packages.txt)
 
 # Clean-up
 RUN rm /tmp/packages.txt
