@@ -11,8 +11,15 @@ permissions:
 name: Build
 jobs:
   build-amd64:
-    runs-on:
-      labels: runs-on,runner=4cpu-linux-x64,run-id=${{ github.run_id }}
+    runs-on: ${{ github.repository_owner == 'rancher' && format('runs-on,runner=4cpu-linux-x64,run-id={0}', github.run_id) || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: hardened-calico
+            target: calico_image
+          - image: hardened-calico-node
+            target: calico_node_image
     steps:
     - name: Checkout code
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -26,7 +33,10 @@ jobs:
       with:
         context: .
         push: false
-        tags: rancher/hardened-calico:${{ env.TAG }}-amd64
+        load: true
+        tags: rancher/${{ matrix.image }}:${{ env.TAG }}
+        target: ${{ matrix.target }}
+        platforms: linux/amd64
         file: Dockerfile
         build-args: |
           TAG=${{ env.TAG }}
@@ -34,21 +44,29 @@ jobs:
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
-        image-ref: rancher/hardened-calico:${{ env.TAG }}-amd64
+        image-ref: rancher/${{ matrix.image }}:${{ env.TAG }}
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
         format: 'sarif'
-        output: 'trivy-results.sarif'
+        output: 'trivy-results-${{ matrix.image }}-amd64.sarif'
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
       if: always()
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: 'trivy-results-${{ matrix.image }}-amd64.sarif'
+        category: ${{ matrix.image }}-amd64
 
   build-arm64:
-    runs-on:
-      labels: runs-on,runner=4cpu-linux-arm64,run-id=${{ github.run_id }}
+    runs-on: ${{ github.repository_owner == 'rancher' && format('runs-on,runner=4cpu-linux-arm64,run-id={0}', github.run_id) || 'ubuntu-24.04-arm' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: hardened-calico
+            target: calico_image
+          - image: hardened-calico-node
+            target: calico_node_image
     steps:
     - name: Check out code
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -68,9 +86,10 @@ jobs:
       with:
         context: .
         push: false
-        tags: rancher/hardened-calico:${{ env.TAG }}-arm64
+        load: true
+        tags: rancher/${{ matrix.image }}:${{ env.TAG }}
+        target: ${{ matrix.target }}
         file: Dockerfile
-        outputs: type=docker
         platforms: linux/arm64
         build-args: |
           TAG=${{ env.TAG }}

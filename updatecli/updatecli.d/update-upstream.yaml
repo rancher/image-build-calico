@@ -24,7 +24,84 @@ sources:
       matchpattern: 'go ([0-9]+\.[0-9]+)'
     transformers:
       - trimprefix: 'go '
+  go_version:
+    name: Get upstream Go build version
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/metadata.mk'
+      matchpattern: 'GO_VERSION=[0-9]+\.[0-9]+\.[0-9]+'
+    transformers:
+      - trimprefix: 'GO_VERSION='
+  llvm_version:
+    name: Get upstream LLVM version
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/metadata.mk'
+      matchpattern: 'LLVM_VERSION=[0-9]+\.[0-9]+\.[0-9]+'
+    transformers:
+      - trimprefix: 'LLVM_VERSION='
+  k8s_version:
+    name: Get upstream Kubernetes version
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/metadata.mk'
+      matchpattern: 'K8S_VERSION=v[0-9A-Za-z.-]+'
+    transformers:
+      - trimprefix: 'K8S_VERSION=v'
+  bird_version:
+    name: Get upstream Bird version
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/metadata.mk'
+      matchpattern: 'BIRD_VERSION=[0-9A-Za-z.-]+'
+    transformers:
+      - trimprefix: 'BIRD_VERSION='
+  bpftool_image:
+    name: Get upstream bpftool image
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/metadata.mk'
+      matchpattern: 'BPFTOOL_IMAGE=calico/bpftool:[0-9A-Za-z.-]+'
+    transformers:
+      - trimprefix: 'BPFTOOL_IMAGE='
 targets:
+  calico_go_build_image:
+    name: 'Pin Calico go-build image for upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Dockerfile
+      matchpattern: '(?m)^ARG CALICO_GO_BUILD_IMAGE=.*$'
+      replacepattern: 'ARG CALICO_GO_BUILD_IMAGE=calico/go-build:{{ source "go_version" }}-llvm{{ source "llvm_version" }}-k8s{{ source "k8s_version" }}'
+  bird_version:
+    name: 'Pin Bird version for upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Dockerfile
+      matchpattern: '(?m)^ARG BIRD_VERSION=.*$'
+      replacepattern: 'ARG BIRD_VERSION={{ source "bird_version" }}'
+  bpftool_image:
+    name: 'Pin bpftool image for upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Dockerfile
+      matchpattern: '(?m)^ARG BPFTOOL_IMAGE=.*$'
+      replacepattern: 'ARG BPFTOOL_IMAGE={{ source "bpftool_image" }}'
   tagfile:
     name: 'Bump TAG to upstream version {{ source "tag" }}'
     kind: file
