@@ -227,6 +227,10 @@ RUN zypper --gpg-auto-import-keys --root /rootfs install -y $(sed 's/#.*//' /tmp
 RUN zypper --gpg-auto-import-keys --root /rootfs update -y && \
     rm -rf /rootfs/etc/zypp /rootfs/var/cache/zypp
 
+# Kludge for files required by the ipset binary
+COPY --from=bci /usr/etc/protocols /rootfs/etc/protocols
+COPY --from=bci /usr/etc/services /rootfs/etc/services
+
 FROM runtime_rootfs AS container_image
 COPY --from=runtime_packages /rootfs/ /
 
