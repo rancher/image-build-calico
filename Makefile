@@ -71,8 +71,7 @@ push-image: $(BUILDDIR) | buildx-machine
 	docker buildx build \
 		--builder=$(MACHINE) \
 		$(IID_FILE_FLAG) \
-		--sbom=true \
-		--attest type=provenance,mode=max \
+		$(BUILDX_ARGS) \
 		--platform=$(TARGET_PLATFORMS) \
 		--build-arg TAG=$(TAG:$(BUILD_META)=) \
 		--build-arg K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
@@ -81,6 +80,11 @@ push-image: $(BUILDDIR) | buildx-machine
 		--push \
 		--metadata-file $(METADATA_FILE) \
 		.
+
+.PHONY: push-prime-image
+push-prime-image:
+	BUILDX_ARGS="--sbom=true --attest type=provenance,mode=max" \
+	$(MAKE) push-image
 
 .PHONY: manifest-push
 manifest-push: $(BUILDDIR) | buildx-machine
