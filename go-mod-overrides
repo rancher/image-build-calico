@@ -10,3 +10,7 @@
 # github.com/gopacket/gopacket: CVE-2026-54332, CVE-2026-54345 (panics parsing malformed packets).
 # Drop once upstream requires github.com/gopacket/gopacket >= v1.6.1.
 -replace github.com/gopacket/gopacket=github.com/gopacket/gopacket@v1.6.1
+
+# github.com/google/cel-go: GHSA-gcjh-h69q-9w9g (JSON private fields exposed via NativeTypes and ParseStructTag).
+# Drop once upstream requires github.com/google/cel-go >= v0.29.0.
+-replace github.com/google/cel-go=github.com/google/cel-go@v0.29.0
