@@ -6,3 +6,7 @@
 # CVE-2026-84304 (HIGH); bump to v1.83.1.
 # Drop once upstream requires google.golang.org/grpc >= v1.83.1.
 -replace google.golang.org/grpc=google.golang.org/grpc@v1.83.1
+
+# github.com/gopacket/gopacket: CVE-2026-54332, CVE-2026-54345 (panics parsing malformed packets).
+# Drop once upstream requires github.com/gopacket/gopacket >= v1.6.1.
+-replace github.com/gopacket/gopacket=github.com/gopacket/gopacket@v1.6.1
