@@ -2,6 +2,15 @@
 # Drop once upstream requires golang.org/x/text >= v0.39.0.
 -replace golang.org/x/text=golang.org/x/text@v0.39.0
 
-# google.golang.org/grpc: GHSA-hrxh-6v49-42gf (xDS RBAC auth bypass, HTTP/2 Rapid Reset DoS).
-# Drop once upstream requires google.golang.org/grpc >= v1.82.1.
--replace google.golang.org/grpc=google.golang.org/grpc@v1.82.1
+# google.golang.org/grpc: GHSA-hrxh-6v49-42gf (xDS RBAC auth bypass, HTTP/2 Rapid Reset DoS),
+# CVE-2026-84304 (HIGH); bump to v1.83.1.
+# Drop once upstream requires google.golang.org/grpc >= v1.83.1.
+-replace google.golang.org/grpc=google.golang.org/grpc@v1.83.1
+
+# github.com/gopacket/gopacket: CVE-2026-54332, CVE-2026-54345 (panics parsing malformed packets).
+# Drop once upstream requires github.com/gopacket/gopacket >= v1.6.1.
+-replace github.com/gopacket/gopacket=github.com/gopacket/gopacket@v1.6.1
+
+# github.com/google/cel-go: GHSA-gcjh-h69q-9w9g (JSON private fields exposed via NativeTypes and ParseStructTag).
+# Drop once upstream requires github.com/google/cel-go >= v0.29.0.
+-replace github.com/google/cel-go=github.com/google/cel-go@v0.29.0
