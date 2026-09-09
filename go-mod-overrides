@@ -13,3 +13,8 @@
 # github.com/gopacket/gopacket: CVE-2026-54332, CVE-2026-54345 (panic parsing crafted packets).
 # Drop once upstream requires github.com/gopacket/gopacket >= v1.6.1.
 -replace github.com/gopacket/gopacket=github.com/gopacket/gopacket@v1.6.1
+
+# golang.org/x/crypto: CVE-2026-56855, CVE-2026-78662 (SSH channel DoS); bump to v0.56.0.
+# Requires a go1.26 build base (GO_IMAGE bumped to v1.26.8b1).
+# Drop once upstream requires golang.org/x/crypto >= v0.56.0.
+-replace golang.org/x/crypto=golang.org/x/crypto@v0.56.0
