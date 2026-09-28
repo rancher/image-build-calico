@@ -1,0 +1,223 @@
+---
+name: 'Update BCI base image digest'
+
+# Pipeline 1 - intra-stream CVE refresh (auto-merge).
+# Refreshes the pinned digest WITHIN the currently configured stream tag
+# (image.bci.build.tag / image.bci.runtime.tag, e.g. "16.0"). It never
+# advances the minor stream. Gated by trivy so it only opens when there is a
+# real security improvement in at least one image, then auto-merges after CI.
+
+sources:
+  build_current_digest:
+    name: Get current BCI build base image reference from Dockerfile
+    kind: dockerfile
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: BCI_BUILD_IMAGE
+  build_digest:
+    name: Get latest BCI build base image digest for configured stream tag
+    kind: dockerdigest
+    spec:
+      image: '{{ .image.bci.build.name }}'
+      tag: '{{ .image.bci.build.tag }}'
+
+  runtime_current_digest:
+    name: Get current BCI runtime base image reference from Dockerfile
+    kind: dockerfile
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: BCI_RUNTIME_IMAGE
+  runtime_digest:
+    name: Get latest BCI runtime base image digest for configured stream tag
+    kind: dockerdigest
+    spec:
+      image: '{{ .image.bci.runtime.name }}'
+      tag: '{{ .image.bci.runtime.tag }}'
+
+conditions:
+  cve_gate:
+    name: Update only if either candidate image has fewer HIGH/CRITICAL OS CVEs
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: './updatecli/scripts/should-update-bci-digest.sh "{{ source "build_current_digest" }}" "{{ .image.bci.build.name }}:{{ source "build_digest" }}" "{{ .image.bci.build.tag }}" "{{ source "runtime_current_digest" }}" "{{ .image.bci.runtime.name }}:{{ source "runtime_digest" }}" "{{ .image.bci.runtime.tag }}"'
+
+targets:
+  build_dockerfile:
+    name: 'Update BCI build base image digest in Dockerfile'
+    kind: dockerfile
+    scmid: default
+    sourceid: build_digest
+    transformers:
+      - addprefix: '{{ .image.bci.build.name }}:'
+    spec:
+      file: 'Dockerfile'
+      instruction:
+        keyword: 'ARG'
+        matcher: 'BCI_BUILD_IMAGE'
+  runtime_dockerfile:
+    name: 'Update BCI runtime base image digest in Dockerfile'
+    kind: dockerfile
+    scmid: default
+    sourceid: runtime_digest
+    transformers:
+      - addprefix: '{{ .image.bci.runtime.name }}:'
+    spec:
+      file: 'Dockerfile'
+      instruction:
+        keyword: 'ARG'
+        matcher: 'BCI_RUNTIME_IMAGE'
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ requiredEnv "GITHUB_REPOSITORY_OWNER" }}'
+      repository: '{{ requiredEnv "UPDATECLI_GITHUB_REPO" }}'
+      branch: '{{ requiredEnv "UPDATECLI_GITHUB_BRANCH" }}'
+
+actions:
+  default:
+    title: 'Update BCI base image digest'
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      description:
+        <h3>Update BCI base image digest</h3>
+        <ul>
+          <li>{{ .image.bci.build.name }}:{{ source "build_digest" }}</li>
+          <li>{{ .image.bci.runtime.name }}:{{ source "runtime_digest" }}</li>
+        </ul>
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+      merge:
+        strategy: auto
+      mergemethod: squash
+
+---
+name: 'Update BCI base image tag'
+
+# Pipeline 2 - new minor stream advance (manual review).
+# Detects a new minor stream tag (e.g. 16.0 -> 16.1) for both images and, when
+# found, pins the Dockerfile digests to the new stream AND bumps the
+# values.yaml stream tags so Pipeline 1 subsequently tracks digests on the new
+# stream. No CVE gate: it must open regardless of any CVE delta.
+
+sources:
+  build_tag:
+    name: Get latest BCI build base image stream tag
+    kind: dockerimage
+    spec:
+      image: '{{ .image.bci.build.name }}'
+      versionfilter:
+        kind: regex
+        pattern: '^\d+\.\d+$'
+  build_digest:
+    name: Get latest BCI build base image digest for stream tag
+    kind: dockerdigest
+    dependson:
+      - build_tag
+    spec:
+      image: '{{ .image.bci.build.name }}'
+      tag: '{{ source "build_tag" }}'
+
+  runtime_tag:
+    name: Get latest BCI runtime base image stream tag
+    kind: dockerimage
+    spec:
+      image: '{{ .image.bci.runtime.name }}'
+      versionfilter:
+        kind: regex
+        pattern: '^\d+\.\d+$'
+  runtime_digest:
+    name: Get latest BCI runtime base image digest for stream tag
+    kind: dockerdigest
+    dependson:
+      - runtime_tag
+    spec:
+      image: '{{ .image.bci.runtime.name }}'
+      tag: '{{ source "runtime_tag" }}'
+
+targets:
+  build_dockerfile:
+    name: 'Update BCI build base image digest in Dockerfile'
+    kind: dockerfile
+    scmid: default
+    sourceid: build_digest
+    transformers:
+      - addprefix: '{{ .image.bci.build.name }}:'
+    spec:
+      file: 'Dockerfile'
+      instruction:
+        keyword: 'ARG'
+        matcher: 'BCI_BUILD_IMAGE'
+  build_values:
+    name: 'Update BCI build base image tag in values.yaml'
+    kind: yaml
+    scmid: default
+    sourceid: build_tag
+    spec:
+      file: 'updatecli/values.yaml'
+      key: '$.image.bci.build.tag'
+  runtime_dockerfile:
+    name: 'Update BCI runtime base image digest in Dockerfile'
+    kind: dockerfile
+    scmid: default
+    sourceid: runtime_digest
+    transformers:
+      - addprefix: '{{ .image.bci.runtime.name }}:'
+    spec:
+      file: 'Dockerfile'
+      instruction:
+        keyword: 'ARG'
+        matcher: 'BCI_RUNTIME_IMAGE'
+  runtime_values:
+    name: 'Update BCI runtime base image tag in values.yaml'
+    kind: yaml
+    scmid: default
+    sourceid: runtime_tag
+    spec:
+      file: 'updatecli/values.yaml'
+      key: '$.image.bci.runtime.tag'
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ requiredEnv "GITHUB_REPOSITORY_OWNER" }}'
+      repository: '{{ requiredEnv "UPDATECLI_GITHUB_REPO" }}'
+      branch: '{{ requiredEnv "UPDATECLI_GITHUB_BRANCH" }}'
+
+actions:
+  default:
+    title: 'Update BCI base image tag'
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      description:
+        <h3>Update BCI base image tag</h3>
+        <ul>
+          <li>{{ .image.bci.build.name }}:{{ source "build_tag" }}</li>
+          <li>{{ .image.bci.runtime.name }}:{{ source "runtime_tag" }}</li>
+        </ul>
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+      merge:
+        strategy: manual
+      mergemethod: squash
