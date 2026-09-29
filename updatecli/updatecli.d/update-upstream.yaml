@@ -25,25 +25,15 @@ sources:
     transformers:
       - trimprefix: 'go '
 targets:
-  dockerfile:
-    name: 'Bump Dockerfile to upstream version {{ source "tag" }}'
-    kind: dockerfile
-    scmid: default
-    sourceid: tag
-    spec:
-      file: Dockerfile
-      instruction:
-        keyword: ARG
-        matcher: TAG
-  makefile:
-    name: 'Bump Makefile to upstream version {{ source "tag" }}'
+  tagfile:
+    name: 'Bump TAG to upstream version {{ source "tag" }}'
     kind: file
     scmid: default
     disablesourceinput: true
     spec:
-      file: Makefile
-      matchpattern: '(?m)^TAG \:\= (.*)'
-      replacepattern: 'TAG := {{ source "tag" }}$$(BUILD_META)'
+      file: TAG
+      matchpattern: '(?m)^(.+)$'
+      replacepattern: '{{ source "tag" }}'
 scms:
   default:
     kind: github
