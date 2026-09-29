@@ -1,28 +1,17 @@
 ---
 name: 'Update BCI base image digest'
 
-# Pipeline 1 - intra-stream CVE refresh (auto-merge).
-# Refreshes the pinned digest WITHIN the currently configured stream tag
-# (image.bci.build.tag / image.bci.runtime.tag, e.g. "16.0"). It never
-# advances the minor stream. Gated by trivy so it only opens when there is a
-# real security improvement in at least one image, then auto-merges after CI.
+# Pipeline 1 - intra-stream runtime CVE refresh (auto-merge).
+# Refreshes the pinned bci-minimal (runtime) digest WITHIN the configured
+# runtime stream tag (image.bci.runtime.tag, e.g. "16.0"). It never advances
+# the minor stream. Gated by trivy so it only opens when the runtime image has
+# a real security improvement, then auto-merges after CI.
+#
+# bci-base is a build-only image: its OS packages never ship in the final
+# image, so it is not digest-pinned or CVE-gated here. It stays on a floating
+# stream tag and is only advanced to a new minor by Pipeline 2.
 
 sources:
-  build_current_digest:
-    name: Get current BCI build base image reference from Dockerfile
-    kind: dockerfile
-    spec:
-      file: Dockerfile
-      instruction:
-        keyword: ARG
-        matcher: BCI_BUILD_IMAGE
-  build_digest:
-    name: Get latest BCI build base image digest for configured stream tag
-    kind: dockerdigest
-    spec:
-      image: '{{ .image.bci.build.name }}'
-      tag: '{{ .image.bci.build.tag }}'
-
   runtime_current_digest:
     name: Get current BCI runtime base image reference from Dockerfile
     kind: dockerfile
@@ -40,25 +29,13 @@ sources:
 
 conditions:
   cve_gate:
-    name: Update only if either candidate image has fewer HIGH/CRITICAL OS CVEs
+    name: Update only if the candidate runtime image has fewer HIGH/CRITICAL OS CVEs
     kind: shell
     disablesourceinput: true
     spec:
-      command: './updatecli/scripts/should-update-bci-digest.sh "{{ source "build_current_digest" }}" "{{ .image.bci.build.name }}:{{ source "build_digest" }}" "{{ .image.bci.build.tag }}" "{{ source "runtime_current_digest" }}" "{{ .image.bci.runtime.name }}:{{ source "runtime_digest" }}" "{{ .image.bci.runtime.tag }}"'
+      command: './updatecli/scripts/should-update-bci-digest.sh "{{ source "runtime_current_digest" }}" "{{ .image.bci.runtime.name }}:{{ source "runtime_digest" }}" "{{ .image.bci.runtime.tag }}"'
 
 targets:
-  build_dockerfile:
-    name: 'Update BCI build base image digest in Dockerfile'
-    kind: dockerfile
-    scmid: default
-    sourceid: build_digest
-    transformers:
-      - addprefix: '{{ .image.bci.build.name }}:'
-    spec:
-      file: 'Dockerfile'
-      instruction:
-        keyword: 'ARG'
-        matcher: 'BCI_BUILD_IMAGE'
   runtime_dockerfile:
     name: 'Update BCI runtime base image digest in Dockerfile'
     kind: dockerfile
@@ -91,9 +68,8 @@ actions:
     scmid: default
     spec:
       description:
-        <h3>Update BCI base image digest</h3>
+        <h3>Update BCI runtime base image digest</h3>
         <ul>
-          <li>{{ .image.bci.build.name }}:{{ source "build_digest" }}</li>
           <li>{{ .image.bci.runtime.name }}:{{ source "runtime_digest" }}</li>
         </ul>
       labels:
@@ -108,10 +84,12 @@ actions:
 name: 'Update BCI base image tag'
 
 # Pipeline 2 - new minor stream advance (manual review).
-# Detects a new minor stream tag (e.g. 16.0 -> 16.1) for both images and, when
-# found, pins the Dockerfile digests to the new stream AND bumps the
-# values.yaml stream tags so Pipeline 1 subsequently tracks digests on the new
-# stream. No CVE gate: it must open regardless of any CVE delta.
+# Detects a new minor stream tag (e.g. 16.0 -> 16.1) for both images. bci-base
+# (build-only) is moved to the new FLOATING stream tag with no digest, while
+# the bci-minimal (runtime) image is pinned to the new stream's digest. Both
+# values.yaml stream tags are bumped so Pipeline 1 subsequently tracks runtime
+# digests on the new stream. No CVE gate: it must open regardless of any CVE
+# delta.
 
 sources:
   build_tag:
@@ -122,14 +100,6 @@ sources:
       versionfilter:
         kind: regex
         pattern: '^\d+\.\d+$'
-  build_digest:
-    name: Get latest BCI build base image digest for stream tag
-    kind: dockerdigest
-    dependson:
-      - build_tag
-    spec:
-      image: '{{ .image.bci.build.name }}'
-      tag: '{{ source "build_tag" }}'
 
   runtime_tag:
     name: Get latest BCI runtime base image stream tag
@@ -150,10 +120,10 @@ sources:
 
 targets:
   build_dockerfile:
-    name: 'Update BCI build base image digest in Dockerfile'
+    name: 'Update BCI build base image tag in Dockerfile'
     kind: dockerfile
     scmid: default
-    sourceid: build_digest
+    sourceid: build_tag
     transformers:
       - addprefix: '{{ .image.bci.build.name }}:'
     spec:
