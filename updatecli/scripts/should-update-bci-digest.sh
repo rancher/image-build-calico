@@ -2,21 +2,25 @@
 
 set -euo pipefail
 
-# Evaluate one or more images and allow the update when AT LEAST ONE image's
-# candidate has fewer HIGH/CRITICAL OS CVEs than its current pin.
+# Evaluate a single image and allow the update only when the candidate has
+# fewer HIGH/CRITICAL OS CVEs than the current pin.
 #
-# Arguments are provided in triples, once per image:
+# Arguments:
 #   <current-image-ref> <candidate-image-ref> <default-tag>
 #
-# Returns exit code 0 (update allowed) when, for any image:
+# Returns exit code 0 (update allowed) when:
 #   1) the current image has at least one HIGH/CRITICAL OS CVE, and
 #   2) the candidate image has fewer HIGH/CRITICAL OS CVEs than current.
 # Otherwise returns exit code 1 (update blocked).
 
-if (( $# == 0 || $# % 3 != 0 )); then
-  echo "usage: $0 <current-ref> <candidate-ref> <default-tag> [<current-ref> <candidate-ref> <default-tag> ...]" >&2
+if (( $# != 3 )); then
+  echo "usage: $0 <current-ref> <candidate-ref> <default-tag>" >&2
   exit 2
 fi
+
+current_ref="$1"
+candidate_ref="$2"
+default_tag="$3"
 
 infer_image_name_from_ref() {
   local ref ref_without_digest tail
@@ -93,39 +97,23 @@ count_high_critical_os_vulns() {
 workdir="$(mktemp -d)"
 trap 'rm -rf "${workdir}"' EXIT
 
-any_improved=1 # 1 = no improvement found yet
-idx=0
+default_image="$(infer_image_name_from_ref "${candidate_ref}")"
+current_ref="$(normalize_ref "${current_ref}" "${default_tag}" "${default_image}")"
+candidate_ref="$(normalize_ref "${candidate_ref}" "${default_tag}" "${default_image}")"
 
-while (( $# > 0 )); do
-  current_ref="$1"
-  candidate_ref="$2"
-  default_tag="$3"
-  shift 3
-  idx=$(( idx + 1 ))
+current_json="${workdir}/current.json"
+candidate_json="${workdir}/candidate.json"
 
-  default_image="$(infer_image_name_from_ref "${candidate_ref}")"
-  current_ref="$(normalize_ref "${current_ref}" "${default_tag}" "${default_image}")"
-  candidate_ref="$(normalize_ref "${candidate_ref}" "${default_tag}" "${default_image}")"
+current_count="$(count_high_critical_os_vulns "${current_ref}" "${current_json}")"
+candidate_count="$(count_high_critical_os_vulns "${candidate_ref}" "${candidate_json}")"
 
-  current_json="${workdir}/current-${idx}.json"
-  candidate_json="${workdir}/candidate-${idx}.json"
+echo "current:   ${current_ref} (HIGH/CRITICAL OS CVEs: ${current_count})"
+echo "candidate: ${candidate_ref} (HIGH/CRITICAL OS CVEs: ${candidate_count})"
 
-  current_count="$(count_high_critical_os_vulns "${current_ref}" "${current_json}")"
-  candidate_count="$(count_high_critical_os_vulns "${candidate_ref}" "${candidate_json}")"
-
-  echo "[image ${idx}] current:   ${current_ref} (HIGH/CRITICAL OS CVEs: ${current_count})"
-  echo "[image ${idx}] candidate: ${candidate_ref} (HIGH/CRITICAL OS CVEs: ${candidate_count})"
-
-  if (( current_count > 0 && candidate_count < current_count )); then
-    echo "[image ${idx}] security improvement detected (candidate is safer)."
-    any_improved=0
-  fi
-done
-
-if (( any_improved == 0 )); then
-  echo "Decision: update allowed (at least one image is safer)."
+if (( current_count > 0 && candidate_count < current_count )); then
+  echo "Decision: update allowed (candidate runtime image is safer)."
   exit 0
 fi
 
-echo "Decision: update blocked (no security improvement in any image)."
+echo "Decision: update blocked (no security improvement)."
 exit 1
