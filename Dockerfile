@@ -99,7 +99,6 @@ FROM builder AS calico_combined
 ARG TARGETARCH
 ARG TAG
 ARG GOEXPERIMENT
-ARG NODE_DRIVER_REGISTRAR_VERSION=2d18e12bc5077c36cbd564be7eab9ea94c0c85fb
 ENV GOEXPERIMENT=${GOEXPERIMENT}
 WORKDIR $GOPATH/src/github.com/projectcalico/calico
 ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -I/go/src/github.com/projectcalico/calico/felix/bpf-gpl"
@@ -107,23 +106,31 @@ ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/
 RUN make -C felix/bpf-gpl/libbpf/src BUILD_STATIC_ONLY=1 && \
     go-build-static.sh -buildvcs=false -trimpath \
     -o /usr/local/bin/calico ./cmd/calico
+RUN go-assert-static.sh /usr/local/bin/calico
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+    go-assert-boring.sh /usr/local/bin/calico; \
+    fi
+
+FROM builder AS csi_node_driver_registrar
+# Calico keeps the registrar standalone and bundles it into the consolidated image:
+# https://github.com/projectcalico/calico/blob/v3.33.0/pod2daemon/Makefile
 RUN git clone --depth=1 https://github.com/kubernetes-csi/node-driver-registrar.git \
     $GOPATH/src/github.com/kubernetes-csi/node-driver-registrar && \
     cd $GOPATH/src/github.com/kubernetes-csi/node-driver-registrar && \
-    git fetch --depth=1 origin ${NODE_DRIVER_REGISTRAR_VERSION} && \
-    git checkout ${NODE_DRIVER_REGISTRAR_VERSION} && \
-    go-build-static.sh -buildvcs=false -trimpath \
-    -o /usr/local/bin/csi-node-driver-registrar ./cmd/csi-node-driver-registrar
-RUN go-assert-static.sh /usr/local/bin/calico /usr/local/bin/csi-node-driver-registrar
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-    go-assert-boring.sh /usr/local/bin/calico /usr/local/bin/csi-node-driver-registrar; \
-    fi
+    REGISTRAR_VERSION="$(sed -n 's/^UPSTREAM_REGISTRAR_TAG[[:space:]]*[^=]*=[[:space:]]*\([^[:space:]#]*\).*/\1/p' $GOPATH/src/github.com/projectcalico/calico/pod2daemon/Makefile)" && \
+    test -n "${REGISTRAR_VERSION}" && \
+    git fetch --depth=1 origin "${REGISTRAR_VERSION}" && \
+    git checkout "${REGISTRAR_VERSION}" && \
+    rm -rf vendor && \
+    CGO_ENABLED=0 go build -buildvcs=false -trimpath \
+    -o /usr/local/bin/csi-node-driver-registrar cmd/csi-node-driver-registrar/*.go
+RUN go-assert-static.sh /usr/local/bin/csi-node-driver-registrar
 
 FROM runtime_rootfs AS calico-image
 LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
 COPY --from=calico_combined /go/src/github.com/projectcalico/calico/LICENSE.md /licenses/LICENSE
 COPY --from=calico_combined /usr/local/bin/calico /usr/bin/calico
-COPY --from=calico_combined /usr/local/bin/csi-node-driver-registrar /usr/bin/csi-node-driver-registrar
+COPY --from=csi_node_driver_registrar /usr/local/bin/csi-node-driver-registrar /usr/bin/csi-node-driver-registrar
 COPY --from=calico_combined /go/src/github.com/projectcalico/calico/docker/calico/typha.cfg /etc/calico/typha.cfg
 RUN ln -s calico /usr/bin/calicoctl && \
     ln -s calico /usr/bin/calico-ipam
