@@ -1,4 +1,6 @@
 ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:16.0
+# Only used for envoy-gateway and envoy-ratelimit
+ARG BCI_NANO_IMAGE=registry.suse.com/bci/bci-nano:16.0
 ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.0@sha256:9099a5ae007bd9e41a287a3c24f115e49c2ae85316e1ef8a683b4e01fb936173
 ARG GO_IMAGE=rancher/hardened-build-base:v1.27.1b1
 ARG CNI_IMAGE_VERSION=v1.9.1-build20260903
@@ -9,6 +11,7 @@ ARG GOEXPERIMENT=boringcrypto
 ARG CALICO_GO_BUILD_IMAGE=calico/go-build:1.27.1-llvm21.1.8-k8s1.37.0
 ARG BIRD_VERSION=v0.3.3-211-g9111ec3c
 ARG BPFTOOL_IMAGE=calico/bpftool:v7.5.0
+ARG ENVOYBINARY_IMAGE=quay.io/tigera/envoybinary:v1.39.1-9408962881
 ARG TARGETARCH
 
 
@@ -89,6 +92,76 @@ RUN zypper --gpg-auto-import-keys --root /rootfs update -y && \
 # Kludge for files required by the ipset binary
 COPY --from=bci /usr/etc/protocols /rootfs/etc/protocols
 COPY --from=bci /usr/etc/services /rootfs/etc/services
+
+### BEGIN CALICO ENVOY ###
+FROM builder AS calico_envoy_gateway_artifacts
+ARG TARGETARCH
+ARG GOEXPERIMENT
+ENV GOEXPERIMENT=${GOEXPERIMENT}
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-gateway
+RUN make init-source
+COPY go-mod-envoy-overrides ./go-mod-envoy-overrides
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-gateway/envoy-gateway
+RUN go-mod-overrides.sh ../go-mod-envoy-overrides
+RUN go-build-static.sh -buildvcs=false -trimpath \
+    -o /usr/local/bin/envoy-gateway ./cmd/envoy-gateway
+RUN go-assert-static.sh /usr/local/bin/envoy-gateway
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+    go-assert-boring.sh /usr/local/bin/envoy-gateway; \
+    fi
+# BoringCrypto verification requires Go symbol data, so only strip afterward.
+RUN llvm-strip /usr/local/bin/envoy-gateway
+RUN mkdir -p /var/lib/eg
+
+FROM builder AS calico_envoy_ratelimit_artifacts
+ARG TARGETARCH
+ARG GOEXPERIMENT
+ENV GOEXPERIMENT=${GOEXPERIMENT}
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-ratelimit
+RUN make init-source
+COPY go-mod-envoy-overrides ./go-mod-envoy-overrides
+WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-ratelimit/envoy-ratelimit
+RUN go-mod-overrides.sh ../go-mod-envoy-overrides
+RUN go-build-static.sh -buildvcs=false -trimpath \
+    -o /usr/local/bin/ratelimit ./src/service_cmd
+RUN go-assert-static.sh /usr/local/bin/ratelimit
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+    go-assert-boring.sh /usr/local/bin/ratelimit; \
+    fi
+# BoringCrypto verification requires Go symbol data, so only strip afterward.
+RUN llvm-strip /usr/local/bin/ratelimit
+
+FROM ${BCI_NANO_IMAGE} AS calico-envoy-gateway-image
+LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
+LABEL org.opencontainers.image.source="https://github.com/projectcalico/calico"
+LABEL org.opencontainers.image.title="Calico Envoy Gateway"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+COPY --from=calico_envoy_gateway_artifacts /usr/local/bin/envoy-gateway /usr/local/bin/envoy-gateway
+COPY --chown=65532:65532 --from=calico_envoy_gateway_artifacts /var/lib/eg /var/lib/eg
+USER 65532:65532
+ENTRYPOINT ["/usr/local/bin/envoy-gateway"]
+
+FROM ${ENVOYBINARY_IMAGE} AS calico_envoy_proxy_artifacts
+
+FROM runtime_rootfs AS calico-envoy-proxy-image
+LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
+LABEL org.opencontainers.image.source="https://github.com/projectcalico/calico"
+LABEL org.opencontainers.image.title="Calico Envoy Proxy"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+COPY --from=calico_envoy_proxy_artifacts /etc/envoy/envoy.yaml /etc/envoy/envoy.yaml
+COPY --chmod=755 --from=calico_envoy_proxy_artifacts /usr/local/bin/envoy /usr/local/bin/envoy
+EXPOSE 10000
+ENTRYPOINT ["/usr/local/bin/envoy"]
+CMD ["-c", "/etc/envoy/envoy.yaml"]
+
+FROM ${BCI_NANO_IMAGE} AS calico-envoy-ratelimit-image
+LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
+LABEL org.opencontainers.image.source="https://github.com/projectcalico/calico"
+LABEL org.opencontainers.image.title="Calico Envoy Ratelimit"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+COPY --from=calico_envoy_ratelimit_artifacts /usr/local/bin/ratelimit /bin/ratelimit
+ENTRYPOINT ["/bin/ratelimit"]
+### END CALICO ENVOY ###
 
 ### BEGIN CONSOLIDATED CALICO ###
 # The v3.33 release combines the Go components behind `calico component <name>`.

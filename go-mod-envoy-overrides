@@ -1,0 +1,6 @@
+# Go overrides specific to the envoy images, as calico is copying them 
+# from the envoyprovxy project repositories and building them separately.
+
+# golang.org/x/crypto: CVE-2026-56855, CVE-2026-78662 (ssh channel DoS) — golang.org/x/crypto/ssh.
+# Drop once upstream requires golang.org/x/crypto >= v0.56.0.
+-replace golang.org/x/crypto=golang.org/x/crypto@v0.56.0

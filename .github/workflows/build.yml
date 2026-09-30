@@ -20,6 +20,12 @@ jobs:
             target: calico_image
           - image: hardened-calico-node
             target: calico_node_image
+          - image: hardened-calico-envoy-gateway
+            target: calico_envoy_gateway_image
+          - image: hardened-calico-envoy-proxy
+            target: calico_envoy_proxy_image
+          - image: hardened-calico-envoy-ratelimit
+            target: calico_envoy_ratelimit_image
     steps:
     - name: Checkout code
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -67,6 +73,12 @@ jobs:
             target: calico_image
           - image: hardened-calico-node
             target: calico_node_image
+          - image: hardened-calico-envoy-gateway
+            target: calico_envoy_gateway_image
+          - image: hardened-calico-envoy-proxy
+            target: calico_envoy_proxy_image
+          - image: hardened-calico-envoy-ratelimit
+            target: calico_envoy_ratelimit_image
     steps:
     - name: Check out code
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
