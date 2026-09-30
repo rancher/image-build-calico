@@ -29,6 +29,9 @@ REPO ?= rancher
 IMAGE_VARIABLES = \
 	calico:--build-arg=K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
 	calico-node:--build-arg=K3S_ROOT_VERSION=$(K3S_ROOT_VERSION) \
+	calico-envoy-gateway: \
+	calico-envoy-proxy: \
+	calico-envoy-ratelimit:
 
 LABEL_ARGS = $(foreach label,$(META_LABELS),--label $(label))
 
@@ -88,12 +91,20 @@ manifest-push-$(1): | buildx-machine
 endef
 $(foreach image,$(IMAGE_VARIABLES),$(eval $(call image_targets,$(word 1,$(subst :, ,$(image))),$(word 2,$(subst :, ,$(image))))))
 
+.PHONY: image-build-calico-envoy
+image-build-calico-envoy:
+	$(MAKE) image-build-calico-envoy-gateway
+	$(MAKE) image-build-calico-envoy-proxy
+	$(MAKE) image-build-calico-envoy-ratelimit
+
 .PHONY: image-build
-image-build: image-build-calico image-build-calico-node
+image-build: image-build-calico image-build-calico-node image-build-calico-envoy
+
 .PHONY: push-image
-push-image: push-image-calico push-image-calico-node
+push-image: push-image-calico push-image-calico-node push-image-calico-envoy-gateway push-image-calico-envoy-proxy push-image-calico-envoy-ratelimit
+
 .PHONY: manifest-push
-manifest-push: manifest-push-calico manifest-push-calico-node
+manifest-push: manifest-push-calico manifest-push-calico-node manifest-push-calico-envoy-gateway manifest-push-calico-envoy-proxy manifest-push-calico-envoy-ratelimit
 
 ifneq ($(strip $(IID_FILE_PATH)),)
 	docker buildx imagetools inspect --format "{{json .Manifest}}" $(CALICO_IMAGE) | jq -r '.digest' > "$(IID_FILE_PATH)"

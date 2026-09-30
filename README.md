@@ -14,3 +14,6 @@ which provides the latest supported Go toolchain (FIPS/BoringCrypto-enabled on a
 
 ## PRIME Images
 - `rancher/hardened-calico-node` — Calico node runtime image
+- `rancher/hardened-calico-envoy-gateway` — Gateway API controller
+- `rancher/hardened-calico-envoy-proxy` — Gateway API data-plane proxy
+- `rancher/hardened-calico-envoy-ratelimit` — Gateway API rate-limit service

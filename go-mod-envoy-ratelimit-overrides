@@ -1,0 +1,9 @@
+# Go overrides specific to the envoy images, as calico is copying them 
+# from the envoyprovxy project repositories and building them separately.
+
+# We can't move to v1.83.2 yet due to compatibility issues with the envoy ratelimit project.
+# Once a calico copied version includes https://github.com/envoyproxy/ratelimit/commit/29ed276b1dd46026e45b280c85ad46cc4372a6c4,
+# we can consider moving to v1.83.2.
+# google.golang.org/grpc: CVE-2026-84445,CVE-2026-84304 (HIGH); bump to v1.82.2.
+# Drop once upstream envoy requires google.golang.org/grpc >= v1.82.2.
+-replace google.golang.org/grpc=google.golang.org/grpc@v1.82.2

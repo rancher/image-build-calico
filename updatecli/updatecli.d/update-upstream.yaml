@@ -74,6 +74,19 @@ sources:
       matchpattern: 'BPFTOOL_IMAGE=calico/bpftool:[0-9A-Za-z.-]+'
     transformers:
       - trimprefix: 'BPFTOOL_IMAGE='
+  envoybinary_image:
+    name: Get upstream Envoy binary image
+    kind: file
+    dependson:
+      - tag
+    spec:
+      file: 'https://raw.githubusercontent.com/{{ .scm.upstream.owner }}/{{ .scm.upstream.repository }}/{{ source "tag" }}/third_party/envoy-proxy/Makefile'
+      matchpattern: 'ENVOYBINARY_IMAGE[[:space:]]*\?=[[:space:]]*[^[:space:]]+'
+    transformers:
+      - findsubmatch:
+          pattern: 'ENVOYBINARY_IMAGE[[:space:]]*\?=[[:space:]]*([^[:space:]]+)'
+          captureindex: 1
+
 targets:
   calico_go_build_image:
     name: 'Pin Calico go-build image for upstream version {{ source "tag" }}'
@@ -102,6 +115,15 @@ targets:
       file: Dockerfile
       matchpattern: '(?m)^ARG BPFTOOL_IMAGE=.*$'
       replacepattern: 'ARG BPFTOOL_IMAGE={{ source "bpftool_image" }}'
+  envoybinary_image:
+    name: 'Pin Envoy binary image for upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Dockerfile
+      matchpattern: '(?m)^ARG ENVOYBINARY_IMAGE=.*$'
+      replacepattern: 'ARG ENVOYBINARY_IMAGE={{ source "envoybinary_image" }}'
   tagfile:
     name: 'Bump TAG to upstream version {{ source "tag" }}'
     kind: file
