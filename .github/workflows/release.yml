@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [calico, calico-node]
+        image: [calico, calico-node, calico-envoy-gateway, calico-envoy-proxy, calico-envoy-ratelimit]
     runs-on: ${{ github.repository_owner == 'rancher' && format('runs-on,runner=4cpu-linux-x64,run-id={0}', github.run_id) || 'ubuntu-latest' }}
     steps:
     - name: Check out code
@@ -95,7 +95,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [calico, calico-node]
+        image: [calico, calico-node, calico-envoy-gateway, calico-envoy-proxy, calico-envoy-ratelimit]
     runs-on: ${{ github.repository_owner == 'rancher' && format('runs-on,runner=4cpu-linux-arm64,run-id={0}', github.run_id) || 'ubuntu-24.04-arm' }}
     steps:
     - name: Check out code
@@ -177,7 +177,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [calico, calico-node]
+        image: [calico, calico-node, calico-envoy-gateway, calico-envoy-proxy, calico-envoy-ratelimit]
     runs-on: ubuntu-latest
     needs: 
       - build-amd64-digest
