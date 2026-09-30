@@ -12,6 +12,7 @@ ARG CALICO_GO_BUILD_IMAGE=calico/go-build:1.27.1-llvm21.1.8-k8s1.37.0
 ARG BIRD_VERSION=v0.3.3-211-g9111ec3c
 ARG BPFTOOL_IMAGE=calico/bpftool:v7.5.0
 ARG ENVOYBINARY_IMAGE=quay.io/tigera/envoybinary:v1.39.1-9408962881
+ARG CALICO_WHISKER_SOURCE_DIGEST=sha256:4802f246acbc4ac08d1ce6b5c229a518dc4d85e33b50b4d1366b05a49459497c
 ARG TARGETARCH
 
 
@@ -96,6 +97,51 @@ RUN zypper --gpg-auto-import-keys --root /rootfs update -y && \
 # Kludge for files required by the ipset binary
 COPY --from=bci /usr/etc/protocols /rootfs/etc/protocols
 COPY --from=bci /usr/etc/services /rootfs/etc/services
+
+### BEGIN CALICO WHISKER ###
+# Copy only the release UI payload from the immutable upstream image; the final
+# runtime is assembled from supported BCI packages rather than inheriting UBI.
+FROM quay.io/calico/whisker@${CALICO_WHISKER_SOURCE_DIGEST} AS calico_whisker_source
+
+FROM bci AS calico_whisker_artifacts
+COPY --from=calico_whisker_source /usr/share/nginx/html/ /usr/share/nginx/html/
+COPY --from=calico_whisker_source /etc/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=calico_whisker_source /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=calico_whisker_source /usr/bin/nginx-start.sh /usr/bin/nginx-start.sh
+COPY --from=calico_whisker_source /licenses/LICENSE /licenses/LICENSE
+RUN sed -i \
+        -e 's!/var/run/nginx.pid!/tmp/nginx.pid!g' \
+        -e '/^user  nginx;$/d' \
+        /etc/nginx/nginx.conf && \
+    sed -i '/^sed -i .*nginx.conf$/d' /usr/bin/nginx-start.sh && \
+    chmod 0755 /usr/bin/nginx-start.sh
+
+FROM bci AS calico_whisker_runtime_packages
+COPY --from=runtime_rootfs / /rootfs
+COPY --from=bci /etc/zypp/repos.d/ /rootfs/etc/zypp/repos.d/
+RUN zypper --gpg-auto-import-keys --root /rootfs install -y nginx && \
+    zypper --gpg-auto-import-keys --root /rootfs update -y && \
+    rm -rf /rootfs/etc/zypp /rootfs/var/cache/zypp
+
+FROM runtime_rootfs AS calico-whisker-image
+ARG TAG
+LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
+LABEL org.opencontainers.image.source="https://github.com/projectcalico/calico"
+LABEL org.opencontainers.image.title="Calico Whisker"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.version="${TAG}"
+COPY --from=calico_whisker_runtime_packages /rootfs/ /
+COPY --from=calico_whisker_artifacts /usr/share/nginx/html/ /usr/share/nginx/html/
+COPY --from=calico_whisker_artifacts /etc/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=calico_whisker_artifacts /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=calico_whisker_artifacts /usr/bin/nginx-start.sh /usr/bin/nginx-start.sh
+COPY --from=calico_whisker_artifacts /licenses/LICENSE /licenses/LICENSE
+RUN mkdir -p /etc/config /var/cache/nginx /var/lib/nginx/tmp /var/log/nginx && \
+    chown 10001:10001 /etc/config /var/cache/nginx /var/lib/nginx /var/log/nginx
+USER 10001:10001
+EXPOSE 8081
+ENTRYPOINT ["/usr/bin/nginx-start.sh"]
+### END CALICO WHISKER ###
 
 ### BEGIN CALICO ENVOY ###
 FROM builder AS calico_envoy_gateway_artifacts

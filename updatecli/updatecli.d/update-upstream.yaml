@@ -86,7 +86,14 @@ sources:
       - findsubmatch:
           pattern: 'ENVOYBINARY_IMAGE[[:space:]]*\?=[[:space:]]*([^[:space:]]+)'
           captureindex: 1
-
+  calico_whisker_digest:
+    name: Get upstream Whisker image digest
+    kind: dockerdigest
+    dependson:
+      - tag
+    spec:
+      image: quay.io/calico/whisker
+      tag: '{{ source "tag" }}'
 targets:
   calico_go_build_image:
     name: 'Pin Calico go-build image for upstream version {{ source "tag" }}'
@@ -124,6 +131,15 @@ targets:
       file: Dockerfile
       matchpattern: '(?m)^ARG ENVOYBINARY_IMAGE=.*$'
       replacepattern: 'ARG ENVOYBINARY_IMAGE={{ source "envoybinary_image" }}'
+  calico_whisker_source_digest:
+    name: 'Pin Whisker image digest for upstream version {{ source "tag" }}'
+    kind: file
+    scmid: default
+    disablesourceinput: true
+    spec:
+      file: Dockerfile
+      matchpattern: '(?m)^ARG CALICO_WHISKER_SOURCE_DIGEST=.*$'
+      replacepattern: 'ARG CALICO_WHISKER_SOURCE_DIGEST={{ source "calico_whisker_digest" }}'
   tagfile:
     name: 'Bump TAG to upstream version {{ source "tag" }}'
     kind: file
