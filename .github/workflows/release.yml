@@ -46,7 +46,7 @@ jobs:
 
     - name: Build and push container image - Staging
       if: github.repository_owner == 'rancher'
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
       env:
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
@@ -61,7 +61,7 @@ jobs:
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
 
     - name: Build and push container image
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
       env:
         META_LABELS: ${{ steps.meta-amd64.outputs.labels }}
       with:
@@ -128,7 +128,7 @@ jobs:
 
     - name: Build and push container image - Staging
       if: github.repository_owner == 'rancher'
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
       env:
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
@@ -143,7 +143,7 @@ jobs:
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
 
     - name: Build and push container image
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
       env:
         META_LABELS: ${{ steps.meta-arm64.outputs.labels }}
       with:
@@ -218,7 +218,7 @@ jobs:
 
     - name: Create manifest list and push - Staging
       if: github.repository_owner == 'rancher'
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
       env:
         MULTI_ARCH: "amd64 arm64"
         DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
@@ -233,7 +233,7 @@ jobs:
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
 
     - name: Create manifest list and push
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
       env:
         MULTI_ARCH: "amd64 arm64"
         DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
