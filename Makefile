@@ -88,7 +88,10 @@ manifest-push-$(1): | buildx-machine
 	docker buildx imagetools create \
 		--builder=$(MACHINE) \
 		-t $(REPO)/hardened-$(1):$(TAG) -t $(REPO)/hardened-$(1):latest \
-		$$$$d
+		$$$$d; \
+	if [ -n "$(IID_FILE_PATH)" ]; then \
+		docker buildx imagetools inspect --format "{{json .Manifest}}" $(REPO)/hardened-$(1):$(TAG) | jq -r '.digest' > "$(IID_FILE_PATH)"; \
+	fi
 endef
 $(foreach image,$(IMAGE_VARIABLES),$(eval $(call image_targets,$(word 1,$(subst :, ,$(image))),$(word 2,$(subst :, ,$(image))))))
 
@@ -106,10 +109,6 @@ push-image: push-image-calico push-image-calico-node push-image-calico-whisker p
 
 .PHONY: manifest-push
 manifest-push: manifest-push-calico manifest-push-calico-node manifest-push-calico-whisker manifest-push-calico-envoy-gateway manifest-push-calico-envoy-proxy manifest-push-calico-envoy-ratelimit
-
-ifneq ($(strip $(IID_FILE_PATH)),)
-	docker buildx imagetools inspect --format "{{json .Manifest}}" $(CALICO_IMAGE) | jq -r '.digest' > "$(IID_FILE_PATH)"
-endif
 
 .PHONY: image-scan
 image-scan:
