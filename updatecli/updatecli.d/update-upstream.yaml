@@ -94,6 +94,10 @@ sources:
     spec:
       image: quay.io/calico/whisker
       tag: '{{ source "tag" }}'
+    transformers:
+      - findsubmatch:
+          pattern: '^.*@(sha256:[0-9a-f]+)$'
+          captureindex: 1
 targets:
   calico_go_build_image:
     name: 'Pin Calico go-build image for upstream version {{ source "tag" }}'
@@ -170,6 +174,6 @@ actions:
       mergemethod: squash
       labels:
         - chore
-        - skip-changelog
         - status/auto-created
+        - updatecli
     scmid: default
