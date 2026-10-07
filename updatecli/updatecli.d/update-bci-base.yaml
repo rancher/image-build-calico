@@ -28,6 +28,12 @@ sources:
       tag: '{{ .image.bci.runtime.tag }}'
 
 conditions:
+  released_runtime_image:
+    name: Update only to released BCI runtime images
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: './updatecli/scripts/is-released-bci-image.sh "{{ .image.bci.runtime.name }}:{{ .image.bci.runtime.tag }}"'
   cve_gate:
     name: Update only if the candidate runtime image has fewer HIGH/CRITICAL OS CVEs
     kind: shell
@@ -117,6 +123,20 @@ sources:
     spec:
       image: '{{ .image.bci.runtime.name }}'
       tag: '{{ source "runtime_tag" }}'
+
+conditions:
+  released_build_image:
+    name: Update only to released BCI build base images
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: './updatecli/scripts/is-released-bci-image.sh "{{ .image.bci.build.name }}:{{ source "build_tag" }}"'
+  released_runtime_image:
+    name: Update only to released BCI runtime images
+    kind: shell
+    disablesourceinput: true
+    spec:
+      command: './updatecli/scripts/is-released-bci-image.sh "{{ .image.bci.runtime.name }}:{{ source "runtime_tag" }}"'
 
 targets:
   build_dockerfile:

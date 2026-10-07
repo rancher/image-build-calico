@@ -47,6 +47,9 @@ jobs:
       - name: Install Updatecli
         uses: updatecli/updatecli-action@2efa15cbae1751f532f9bfc88f56adafd6d1faed # v3.8.0
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
 
