@@ -45,7 +45,7 @@ jobs:
           fi
 
           removed_line="$(grep -E '^-' <<< "$changed_lines" | head -n1 || true)"
-          added_line="$(grep -E '^+' <<< "$changed_lines" | head -n1 || true)"
+          added_line="$(grep -E '^\+' <<< "$changed_lines" | head -n1 || true)"
           image_pattern='ARG GO_IMAGE=rancher/hardened-build-base:v[0-9]+\.[0-9]+\.[0-9]+b[0-9]+'
 
           if ! [[ "$removed_line" =~ ^-${image_pattern}$ ]] || ! [[ "$added_line" =~ ^\+${image_pattern}$ ]]; then
