@@ -1,8 +1,8 @@
 ARG ARCH=${TARGETARCH}
 ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:16.0
 ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.0@sha256:9099a5ae007bd9e41a287a3c24f115e49c2ae85316e1ef8a683b4e01fb936173
-ARG GO_IMAGE=rancher/hardened-build-base:v1.26.8b1
-ARG CNI_IMAGE_VERSION=v1.9.1-build20260903
+ARG GO_IMAGE=rancher/hardened-build-base:v1.26.9b2
+ARG CNI_IMAGE_VERSION=v1.9.1-build20261012
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
 ARG GOEXPERIMENT=boringcrypto
 
@@ -32,7 +32,7 @@ WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 COPY go-mod-overrides ./go-mod-overrides
-RUN go-mod-overrides.sh ./go-mod-overrides
+RUN go-mod-replacer -local ./go-mod-overrides
 RUN sed -n 's/^LIBBPF_VERSION=//p' metadata.mk > /tmp/libbpf_version
 RUN git clone https://github.com/libbpf/libbpf.git $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
@@ -42,7 +42,7 @@ RUN LIBBPF_VERSION=$(cat /tmp/libbpf_version) && git checkout tags/${LIBBPF_VERS
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
 ARG ARCH
-ARG K3S_ROOT_VERSION=v0.15.2
+ARG K3S_ROOT_VERSION=v0.15.3
 # Get xtables files from k3s-root
 RUN mkdir -p /opt/xtables/
 ADD https://github.com/k3s-io/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-${ARCH}.tar /opt/k3s-root/k3s-root.tar
