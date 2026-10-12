@@ -54,7 +54,7 @@ RUN LIBBPF_VERSION=$(cat /tmp/libbpf_version) && git checkout tags/${LIBBPF_VERS
 ### BEGIN K3S XTABLES ###
 FROM builder AS k3s_xtables
 ARG TARGETARCH
-ARG K3S_ROOT_VERSION=v0.15.2
+ARG K3S_ROOT_VERSION=v0.15.3
 # Get xtables files from k3s-root
 RUN mkdir -p /opt/xtables/
 ADD https://github.com/k3s-io/k3s-root/releases/download/${K3S_ROOT_VERSION}/k3s-root-${TARGETARCH}.tar /opt/k3s-root/k3s-root.tar
