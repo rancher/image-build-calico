@@ -63,6 +63,12 @@ jobs:
 
           echo "Validation passed: GO_IMAGE changed from $old_go_image to $new_go_image."
 
+      - name: Calculate release tag from TAG file default
+        run: |
+          TAG="$(make -s log | sed -n 's/^TAG=//p')"
+          BUILD_META="$(make -s log | sed -n 's/^BUILD_META=//p')"
+          echo "RELEASE_TAG=${TAG}${BUILD_META}" >> "$GITHUB_ENV"
+
       - name: Read Secrets
         uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
@@ -78,9 +84,10 @@ jobs:
           private-key: ${{ env.PRIVATE_KEY }}
 
       - name: Republish Latest Release
-        uses: rancher/ecm-distro-tools/actions/republish-latest@e72fccc212c7179d2ff65d173371d8183e95453e # v0.77.6
-        with:
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          commitish: 'master'
+        env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            --target master \
+            --title "$RELEASE_TAG" \
+            --generate-notes
