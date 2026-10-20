@@ -72,11 +72,32 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Apply Updatecli
+      - name: Apply Updatecli (master)
         # Never use '--debug' option, because it might leak the access tokens.
-        run: "updatecli apply --clean --config ./updatecli/updatecli.d/ --values ./updatecli/values.yaml"
+        run: |
+          updatecli apply --clean \
+            --config ./updatecli/updatecli.d/ \
+            --values ./updatecli/values.yaml
         env:
           UPDATECLI_GITHUB_ACTOR: "renovate-rancher[bot]"
           UPDATECLI_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           UPDATECLI_GITHUB_REPO: ${{ github.event.repository.name }}
           UPDATECLI_GITHUB_BRANCH: ${{ github.ref_name }}
+
+      - name: Apply Updatecli (release-3.32)
+        # Only bump the build base, cni-plugins, BCI base and k3s-root on the
+        # release branch; the upstream Calico version must stay pinned to 3.32,
+        # so update-upstream is intentionally excluded here.
+        # Never use '--debug' option, because it might leak the access tokens.
+        run: |
+          updatecli apply --clean \
+            --config ./updatecli/updatecli.d/updatebuildbase.yaml \
+            --config ./updatecli/updatecli.d/updateplugins.yaml \
+            --config ./updatecli/updatecli.d/update-bci-base.yaml \
+            --config ./updatecli/updatecli.d/updatek3sroot.yaml \
+            --values ./updatecli/values-release-3.32.yaml
+        env:
+          UPDATECLI_GITHUB_ACTOR: "renovate-rancher[bot]"
+          UPDATECLI_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          UPDATECLI_GITHUB_REPO: ${{ github.event.repository.name }}
+          UPDATECLI_GITHUB_BRANCH: release-3.32
