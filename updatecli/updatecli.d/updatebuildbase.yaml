@@ -6,6 +6,7 @@ sources:
   current_minor:
     name: Get current build base minor version from Dockerfile
     kind: dockerfile
+    scmid: default
     spec:
       file: Dockerfile
       instruction:
