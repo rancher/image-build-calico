@@ -1,1 +1,5 @@
-# Currently all CVE fixes are handled upstream, no overrides needed.
+# Local go.mod overrides for this image, applied at build time by go-mod-replacer
+# (see Dockerfile). Example: -replace example.com/module=example.com/module@v1.2.3
+#
+# Prefer the global policy: add broadly-applicable CVE bumps to global_overrides.json
+# in rancher/image-build-base. Keep an entry here only if it's specific to this repo.

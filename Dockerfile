@@ -44,7 +44,7 @@ WORKDIR $GOPATH/src/github.com/projectcalico/calico
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
 COPY go-mod-overrides ./go-mod-overrides
-RUN go-mod-overrides.sh ./go-mod-overrides
+RUN go-mod-replacer -local ./go-mod-overrides
 RUN sed -n 's/^LIBBPF_VERSION=//p' metadata.mk > /tmp/libbpf_version
 RUN git clone https://github.com/libbpf/libbpf.git $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf
@@ -148,7 +148,7 @@ WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-gateway
 RUN make init-source
 COPY go-mod-envoy-overrides ./go-mod-envoy-overrides
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-gateway/envoy-gateway
-RUN go-mod-overrides.sh ../go-mod-envoy-overrides
+RUN go-mod-replacer -local ../go-mod-envoy-overrides
 RUN go-build-static.sh -buildvcs=false -trimpath \
     -o /usr/local/bin/envoy-gateway ./cmd/envoy-gateway
 RUN go-assert-static.sh /usr/local/bin/envoy-gateway
@@ -167,7 +167,7 @@ WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-ratelimit
 RUN make init-source
 COPY go-mod-envoy-overrides ./go-mod-envoy-overrides
 WORKDIR $GOPATH/src/github.com/projectcalico/calico/third_party/envoy-ratelimit/envoy-ratelimit
-RUN go-mod-overrides.sh ../go-mod-envoy-overrides
+RUN go-mod-replacer -local ../go-mod-envoy-overrides
 RUN go-build-static.sh -buildvcs=false -trimpath \
     -o /usr/local/bin/ratelimit ./src/service_cmd
 RUN go-assert-static.sh /usr/local/bin/ratelimit
