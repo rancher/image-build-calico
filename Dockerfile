@@ -256,6 +256,13 @@ RUN ln -s calico /usr/bin/calicoctl && \
 USER 10001:10001
 ENTRYPOINT ["/usr/bin/calico"]
 
+FROM calico-image AS calico-calico-image
+
+FROM cni AS calico-third-party-cni-plugins-image
+LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
+RUN mkdir -p /host/opt/cni && \
+    ln -s /stage /host/opt/cni/bin
+
 # Calico BPF sources require the glibc headers and LLVM toolchain provided by the upstream release's go-build image.
 FROM ${CALICO_GO_BUILD_IMAGE} AS calico_bpf_artifacts
 ARG TARGETARCH
