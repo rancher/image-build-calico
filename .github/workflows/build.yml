@@ -29,7 +29,9 @@ jobs:
     - name: Build Calico container images
       run: |
         for target in image-build-calico \
+          image-build-calico-calico \
           image-build-calico-node \
+          image-build-calico-third-party-cni-plugins \
           image-build-calico-whisker; do
           echo "Building ${target}"
           time env -u TAG GITHUB_ACTION_TAG="${BUILD_TAG}" make "${target}"
@@ -40,7 +42,7 @@ jobs:
 
     - name: Scan Calico container images
       run: |
-        for image in hardened-calico hardened-calico-node hardened-calico-whisker; do
+        for image in hardened-calico hardened-calico-calico hardened-calico-node hardened-calico-third-party-cni-plugins hardened-calico-whisker; do
           trivy image \
             --ignore-unfixed \
             --no-progress \
@@ -64,6 +66,20 @@ jobs:
       with:
         sarif_file: 'trivy-results-hardened-calico-node-amd64.sarif'
         category: hardened-calico-node-amd64
+
+    - name: Upload consolidated Calico scan results to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      with:
+        sarif_file: 'trivy-results-hardened-calico-calico-amd64.sarif'
+        category: hardened-calico-calico-amd64
+
+    - name: Upload third-party CNI scan results to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      with:
+        sarif_file: 'trivy-results-hardened-calico-third-party-cni-plugins-amd64.sarif'
+        category: hardened-calico-third-party-cni-plugins-amd64
 
   build-envoy-amd64:
     runs-on: ${{ github.repository_owner == 'rancher' && format('runs-on,runner=4cpu-linux-x64,run-id={0}', github.run_id) || 'ubuntu-latest' }}
@@ -149,7 +165,9 @@ jobs:
     - name: Build Calico container images
       run: |
         for target in image-build-calico \
+          image-build-calico-calico \
           image-build-calico-node \
+          image-build-calico-third-party-cni-plugins \
           image-build-calico-whisker; do
           echo "Building ${target}"
           time env -u TAG GITHUB_ACTION_TAG="${BUILD_TAG}" make "${target}"

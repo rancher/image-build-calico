@@ -10,10 +10,12 @@ which provides the latest supported Go toolchain (FIPS/BoringCrypto-enabled on a
 
 ## Public Images
 
-- `rancher/hardened-calico` — consolidated Calico component binary
+- `rancher/hardened-calico` — consolidated Calico component binary; used by RKE2 Canal (Calico + Flannel)
 
 ## PRIME Images
+- `rancher/hardened-calico-calico` — the same image as `rancher/hardened-calico`, complies with requirements set by the chart's `hardened-calico-` prefix
 - `rancher/hardened-calico-node` — Calico node runtime image
+- `rancher/hardened-calico-third-party-cni-plugins` — all plugins from `rancher/hardened-cni-plugins`, staged for the Calico CNI installer
 - `rancher/hardened-calico-whisker` — Whisker UI assets served by nginx
 - `rancher/hardened-calico-envoy-gateway` — Gateway API controller
 - `rancher/hardened-calico-envoy-proxy` — Gateway API data-plane proxy
