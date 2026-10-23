@@ -1,4 +1,4 @@
-ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:16.0
+ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:16.1
 # Only used for envoy-gateway and envoy-ratelimit
 ARG BCI_NANO_IMAGE=registry.suse.com/bci/bci-nano:16.0
 ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.1@sha256:0fc71f638ee22542945e7dbf56a7bde236656ad952e6222a72d14b545ca65bd9
