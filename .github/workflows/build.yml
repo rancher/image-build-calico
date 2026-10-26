@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
     - name: Set the TAG value
       id: get-TAG
@@ -55,28 +55,28 @@ jobs:
 
     - name: Upload Calico scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-amd64.sarif'
         category: hardened-calico-amd64
 
     - name: Upload Calico Node scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-node-amd64.sarif'
         category: hardened-calico-node-amd64
 
     - name: Upload consolidated Calico scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-calico-amd64.sarif'
         category: hardened-calico-calico-amd64
 
     - name: Upload third-party CNI scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-third-party-cni-plugins-amd64.sarif'
         category: hardened-calico-third-party-cni-plugins-amd64
@@ -88,7 +88,7 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
     - name: Set the TAG value
       run: |
@@ -127,21 +127,21 @@ jobs:
 
     - name: Upload Envoy Gateway scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-envoy-gateway-amd64.sarif'
         category: hardened-calico-envoy-gateway-amd64
 
     - name: Upload Envoy Ratelimit scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-envoy-ratelimit-amd64.sarif'
         category: hardened-calico-envoy-ratelimit-amd64
 
     - name: Upload Envoy Proxy scan results to GitHub Security tab
       if: always()
-      uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
       with:
         sarif_file: 'trivy-results-hardened-calico-envoy-proxy-amd64.sarif'
         category: hardened-calico-envoy-proxy-amd64
@@ -180,7 +180,7 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
     - name: Set the TAG value
       run: |
