@@ -1,7 +1,7 @@
 ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:16.1
 # Only used for envoy-gateway and envoy-ratelimit
 ARG BCI_NANO_IMAGE=registry.suse.com/bci/bci-nano:16.0
-ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.1@sha256:84cbdcce1793006bca37e810d40eba52fb934c333373e37fed459995af64719c
+ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.1@sha256:8a7038e69fe4e944dec6993fd706a548cc100293cc162be52241e0fa7c13d118
 ARG GO_IMAGE=rancher/hardened-build-base:v1.27.3b1
 ARG CNI_IMAGE_VERSION=v1.9.1-build20261022
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
