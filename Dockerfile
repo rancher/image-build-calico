@@ -1,6 +1,6 @@
 ARG ARCH=${TARGETARCH}
 ARG BCI_BUILD_IMAGE=registry.suse.com/bci/bci-base:16.1
-ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.1@sha256:8a7038e69fe4e944dec6993fd706a548cc100293cc162be52241e0fa7c13d118
+ARG BCI_RUNTIME_IMAGE=registry.suse.com/bci/bci-minimal:16.1@sha256:61ef7c7c2b9a94a1410344c902011324a8ccc077995cfcc3cb6f12ff3c842699
 ARG GO_IMAGE=rancher/hardened-build-base:v1.26.10b1
 ARG CNI_IMAGE_VERSION=v1.9.1-build20261022
 ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
