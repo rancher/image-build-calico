@@ -5,3 +5,7 @@
 # github.com/gopacket/gopacket: CVE-2026-54332, CVE-2026-54345 (panic parsing crafted packets).
 # Drop once upstream requires github.com/gopacket/gopacket >= v1.6.1.
 -replace github.com/gopacket/gopacket=github.com/gopacket/gopacket@v1.6.1
+
+# github.com/klauspost/compress: CVE-2026-116591
+# Drop once upstream requires github.com/klauspost/compress >= v1.20.2.
+-replace github.com/klauspost/compress=github.com/klauspost/compress@v1.20.2
