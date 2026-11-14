@@ -10,7 +10,6 @@ libnetfilter_conntrack3
 libnetfilter_cthelper0
 libnetfilter_cttimeout1
 libnetfilter_queue1
-libpcap1
 net-tools
 procps
 which
