@@ -8,7 +8,7 @@ ARG CNI_IMAGE=rancher/hardened-cni-plugins:${CNI_IMAGE_VERSION}
 ARG GOEXPERIMENT=boringcrypto
 # These are all tracked in upstreams metadata.mk file. UpdateCLI will automatically update these values based on the selected Calico TAG.
 # Upstream derives this tag in metadata.mk as $(GO_VERSION)-llvm$(LLVM_VERSION)-k8s$(K8S_VERSION:v%=%).
-ARG CALICO_GO_BUILD_IMAGE=calico/go-build:1.27.1-llvm21.1.8-k8s1.37.0
+ARG CALICO_GO_BUILD_IMAGE=calico/go-build:1.27.4-llvm21.1.8-k8s1.37.2
 ARG BIRD_VERSION=v0.3.3-211-g9111ec3c
 ARG BPFTOOL_IMAGE=calico/bpftool:v7.5.0
 ARG ENVOYBINARY_IMAGE=quay.io/tigera/envoybinary:v1.39.6-ea719f2eb7
