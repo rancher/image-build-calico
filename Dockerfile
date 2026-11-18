@@ -245,7 +245,7 @@ RUN git clone --depth=1 https://github.com/kubernetes-csi/node-driver-registrar.
     -o /usr/local/bin/csi-node-driver-registrar cmd/csi-node-driver-registrar/*.go
 RUN go-assert-static.sh /usr/local/bin/csi-node-driver-registrar
 
-FROM runtime_rootfs AS calico-image
+FROM runtime_rootfs AS calico-calico-image
 LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
 COPY --from=calico_combined /go/src/github.com/projectcalico/calico/LICENSE.md /licenses/LICENSE
 COPY --from=calico_combined /usr/local/bin/calico /usr/bin/calico
@@ -256,7 +256,13 @@ RUN ln -s calico /usr/bin/calicoctl && \
 USER 10001:10001
 ENTRYPOINT ["/usr/bin/calico"]
 
-FROM calico-image AS calico-calico-image
+FROM calico-calico-image AS calico-image
+COPY --from=runtime_packages /rootfs/ /
+COPY --from=calico_combined /go/src/github.com/projectcalico/calico/node/filesystem/etc/ /etc/
+COPY --from=calico_combined /go/src/github.com/projectcalico/calico/node/filesystem/sbin/ /usr/sbin/
+COPY --from=runit /opt/local/command/ /usr/sbin/
+COPY --from=k3s_xtables /opt/xtables/ /usr/sbin/
+ENTRYPOINT ["start_runit"]
 
 FROM cni AS calico-third-party-cni-plugins-image
 LABEL org.opencontainers.image.url="https://github.com/rancher/image-build-calico"
