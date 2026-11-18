@@ -27,7 +27,7 @@ jobs:
           BUILD_META="$(make -s log | sed -n 's/^BUILD_META=//p')"
           echo "RELEASE_TAG=${TAG}${BUILD_META}" >> "$GITHUB_ENV"
 
-      - name: Validate TAG-only change and release uniqueness
+      - name: Validate upstream version change and release uniqueness
         id: validate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -37,9 +37,25 @@ jobs:
           if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
             echo "Push has no previous commit; skipping release"
             SHOULD_RELEASE=false
-          elif [[ "$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")" != "TAG" ]]; then
-            echo "Push changed files other than TAG; skipping release"
-            SHOULD_RELEASE=false
+          else
+            CHANGED_FILES="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")"
+            if grep -Evq '^(TAG|Dockerfile)$' <<< "$CHANGED_FILES"; then
+              echo "Push changed files other than TAG or the allowed Dockerfile ARGs; skipping release"
+              SHOULD_RELEASE=false
+            fi
+
+            if grep -qx 'Dockerfile' <<< "$CHANGED_FILES"; then
+              MATCH_DOCKERFILE_CHANGES="$(
+                git diff --unified=0 "${{ github.event.before }}" "${{ github.sha }}" -- Dockerfile |
+                  grep -E '^[+-]' |
+                  grep -Ev '^(---|\+\+\+)' |
+                  grep -Ev '^[+-]ARG (CALICO_GO_BUILD_IMAGE|ENVOYBINARY_IMAGE|CALICO_WHISKER_SOURCE_DIGEST)=' || true
+              )"
+              if [[ -n "$MATCH_DOCKERFILE_CHANGES" ]]; then
+                echo "Dockerfile changed lines outside the allowed ARGs; skipping release"
+                SHOULD_RELEASE=false
+              fi
+            fi
           fi
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
