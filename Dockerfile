@@ -223,6 +223,11 @@ WORKDIR $GOPATH/src/github.com/projectcalico/calico
 ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -I/go/src/github.com/projectcalico/calico/felix/bpf-gpl"
 ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -lbpf -lelf -lz -lzstd"
 RUN make -C felix/bpf-gpl/libbpf/src BUILD_STATIC_ONLY=1 && \
+    GIT_COMMIT=$(git rev-parse HEAD) && \
+    BUILD_DATE=$(date -u +%FT%T%z) && \
+    GO_LDFLAGS="-X github.com/projectcalico/calico/pkg/buildinfo.Version=${TAG} \
+    -X github.com/projectcalico/calico/pkg/buildinfo.GitRevision=${GIT_COMMIT} \
+    -X github.com/projectcalico/calico/pkg/buildinfo.BuildDate=${BUILD_DATE}" \
     go-build-static.sh -buildvcs=false -trimpath \
     -o /usr/local/bin/calico ./cmd/calico
 RUN go-assert-static.sh /usr/local/bin/calico
@@ -289,7 +294,12 @@ ENV CGO_ENABLED=1
 ENV CGO_CFLAGS="-I/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -I/go/src/github.com/projectcalico/calico/felix/bpf-gpl"
 ENV CGO_LDFLAGS="-L/go/src/github.com/projectcalico/calico/felix/bpf-gpl/libbpf/src -lbpf -lelf -lz -lzstd"
 RUN make -C felix/bpf-gpl/libbpf/src BUILD_STATIC_ONLY=1
-RUN go-build-static.sh -buildvcs=false -trimpath \
+RUN GIT_COMMIT=$(git rev-parse HEAD) && \
+    BUILD_DATE=$(date -u +%FT%T%z) && \
+    GO_LDFLAGS="-X github.com/projectcalico/calico/pkg/buildinfo.Version=${TAG} \
+    -X github.com/projectcalico/calico/pkg/buildinfo.GitRevision=${GIT_COMMIT} \
+    -X github.com/projectcalico/calico/pkg/buildinfo.BuildDate=${BUILD_DATE}" \
+    go-build-static.sh -buildvcs=false -trimpath \
     -o /usr/local/bin/calico ./cmd/calico && \
     go-build-static.sh -buildvcs=false -trimpath \
     -o /usr/local/bin/mountns ./node/cmd/mountns
