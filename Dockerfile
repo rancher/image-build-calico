@@ -239,14 +239,16 @@ FROM builder AS csi_node_driver_registrar
 # Calico keeps the registrar standalone and bundles it into the consolidated image:
 # https://github.com/projectcalico/calico/blob/v3.33.0/pod2daemon/Makefile
 RUN git clone --depth=1 https://github.com/kubernetes-csi/node-driver-registrar.git \
-    $GOPATH/src/github.com/kubernetes-csi/node-driver-registrar && \
-    cd $GOPATH/src/github.com/kubernetes-csi/node-driver-registrar && \
+    $GOPATH/src/github.com/kubernetes-csi/node-driver-registrar
+WORKDIR $GOPATH/src/github.com/kubernetes-csi/node-driver-registrar
+RUN \
     REGISTRAR_VERSION="$(sed -n 's/^UPSTREAM_REGISTRAR_TAG[[:space:]]*[^=]*=[[:space:]]*\([^[:space:]#]*\).*/\1/p' $GOPATH/src/github.com/projectcalico/calico/pod2daemon/Makefile)" && \
     test -n "${REGISTRAR_VERSION}" && \
     git fetch --depth=1 origin "${REGISTRAR_VERSION}" && \
     git checkout "${REGISTRAR_VERSION}" && \
-    rm -rf vendor && \
-    CGO_ENABLED=0 go build -buildvcs=false -trimpath \
+    rm -rf vendor
+RUN go-mod-replacer
+RUN CGO_ENABLED=0 go build -buildvcs=false -trimpath \
     -o /usr/local/bin/csi-node-driver-registrar cmd/csi-node-driver-registrar/*.go
 RUN go-assert-static.sh /usr/local/bin/csi-node-driver-registrar
 
