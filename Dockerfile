@@ -247,7 +247,7 @@ RUN \
     git fetch --depth=1 origin "${REGISTRAR_VERSION}" && \
     git checkout "${REGISTRAR_VERSION}" && \
     rm -rf vendor
-RUN go-mod-replacer
+RUN go-mod-replacer -local $GOPATH/src/github.com/projectcalico/calico/go-mod-overrides
 RUN CGO_ENABLED=0 go build -buildvcs=false -trimpath \
     -o /usr/local/bin/csi-node-driver-registrar cmd/csi-node-driver-registrar/*.go
 RUN go-assert-static.sh /usr/local/bin/csi-node-driver-registrar
